@@ -1,6 +1,21 @@
 import numpy as np
+import pandas as pd
 
-def openFoamReader(filename, field = "total") :
+
+
+def openFoamReader(filename, *args , **kwargs) :
+    import os
+    dicoReader = { 
+                 "my.dat" : foamStarMotion , 
+                 "forces.dat" : OpenFoamReadForce ,
+			     "motions.dat" : foamStarMotion , 				
+   		  	     }
+    fname = os.path.basename(filename) 
+    return dicoReader.get(fname , foamStarMotion ) ( filename , *args , **kwargs )
+    # .get(fname, foamStarMotion) means that the method foamStarMotion is used by default (if filename is not in dicoReader)
+
+
+def OpenFoamReadForce(fileName, field = "total"):
    """
    Read openFoam "forces" file
    """
@@ -52,15 +67,23 @@ def openFoamReader(filename, field = "total") :
    else :
       dataArray = parsedArray
       labels = [ "Unknown{}".format(j) for j in range(ns)  ]
-   return  xAxis , dataArray , labels
+   return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
 def foamStarMotion( filename , namesLine = 1 ) :
    """
-   Read motion and internal loads from FoamStar (Sopheak format)
+   Read motion and internal loads from foamStar
    """
-   import pandas as pd
+
    #Read header
    with open(filename, "r") as fil :
       header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
    df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
    return df
+
+
+
+
+
+
+ 
+

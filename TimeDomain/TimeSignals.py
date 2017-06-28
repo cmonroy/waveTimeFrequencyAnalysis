@@ -35,27 +35,19 @@ def rampDf(df , rStart, rEnd) :
    return df
 
 
-def read( filename , reader = "bvReader", **kwargs )   :
+def read( filename , reader = "bvReader", *args, **kwargs )   :
    """
-      Read _xAxis signal from file. Reader function should return   (_xAxis, data , columnTitles)
+      Read _xAxis signal from file. Reader function should return a dataframe
    """
 
    #If reader is string, use correspopnding function
    
    if not os.path.exists(filename) :
-      print ( os.path.abspath(filename) + "does not exists" )
+      print ( os.path.abspath(filename) + "does not exist" )
       raise Exception()
 
-   if type(reader) == str : reader = dicoReader[reader]
-   try :
-      xAxis , data , columnTitles = reader( filename, **kwargs)
-   except Exception as e :
-      print ("Could not read file {} with {}".format(filename, str(reader)))
-      raise(Exception(e))
-      xAxis = np.array([-1,1]) ; data = np.array( [[-1,1],[1,-1] ] ) ; columnTitles = ["Error1" , "Error2"]
+   return dicoReader[reader](filename, *args, **kwargs )
 
-   #data.shape = -1 , len(columnTitles)
-   return  pd.DataFrame( data = data , index = xAxis  , columns = columnTitles )
 
 
 def fillCos( A = 1.0, T = 10. , tMin = 0. , tMax = 50. , n = 200) :

@@ -1,3 +1,5 @@
+import pandas as pd
+
 def ariane8Reader(filename, labels = None, headerOnly = False, usePandas = True, headerMax = 200) :
    """
       Read ariane8 time series
@@ -23,7 +25,7 @@ def ariane8Reader(filename, labels = None, headerOnly = False, usePandas = True,
 
    if labels is None :  labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
    data.shape = -1 , len(labels)
-   return table[:,0], data ,labels
+   return pd.DataFrame(table[:,0], data ,labels)
 
 
 def ariane702Reader(filename) :
@@ -57,4 +59,4 @@ def ariane702Reader(filename) :
         if line:
            table[i, :] = map(float, line.split())
 
-    return table[:,0], table[:,1:],labels
+    return pd.DataFrame(table[:,0], table[:,1:],labels)

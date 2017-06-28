@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 def simpleReader(filename, labels = False, headerOnly = False):
    """
    Simplest file format
@@ -40,4 +43,5 @@ def simpleReader(filename, labels = False, headerOnly = False):
    if not labelsOk :
       labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
 
-   return xAxis , data  , labels
+   #return xAxis , data  , labels
+   return pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
