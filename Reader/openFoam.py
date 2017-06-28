@@ -53,3 +53,14 @@ def openFoamReader(filename, field = "total") :
       dataArray = parsedArray
       labels = [ "Unknown{}".format(j) for j in range(ns)  ]
    return  xAxis , dataArray , labels
+
+def foamStarMotion( filename , namesLine = 1 ) :
+   """
+   Read motion and internal loads from FoamStar (Sopheak format)
+   """
+   import pandas as pd
+   #Read header
+   with open(filename, "r") as fil :
+      header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
+   df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
+   return df
