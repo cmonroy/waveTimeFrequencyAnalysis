@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from Reader import tecplot , bvFormat , openFoam , arianeReader, simpleReader
+from . import tecplot , bvFormat , openFoam , arianeReader, simpleReader
 bvReader = bvFormat.bvReader
 bvWriter = bvFormat.bvWriter
 tecplot_HOS = tecplot.tecplot_HOS

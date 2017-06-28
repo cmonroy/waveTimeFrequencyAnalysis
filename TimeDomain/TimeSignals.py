@@ -5,6 +5,7 @@
   Time series function, using pandas DataFrame
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import numpy as np
@@ -14,8 +15,8 @@ import os
 from scipy.interpolate import interp1d
 from math import pi, exp, log
 from matplotlib import pyplot as plt
-from Reader import bvReader, bvWriter , dicoReader, dicoWriter
-import pyplotTools
+from ..Reader import bvReader, bvWriter , dicoReader, dicoWriter
+from .. import pyplotTools
 
 def scal_ramp(time, tStart , tEnd) :
    time = time - tStart
@@ -43,7 +44,7 @@ def read( filename , reader = "bvReader", *args, **kwargs )   :
    #If reader is string, use correspopnding function
    
    if not os.path.exists(filename) :
-      print ( os.path.abspath(filename) + "does not exist" )
+      print ( os.path.abspath(filename) + " does not exist" )
       raise Exception()
 
    return dicoReader[reader](filename, *args, **kwargs )
