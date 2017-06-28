@@ -23,9 +23,9 @@ def tecplot_HOS(file):
          blocHeader = blockList[ibloc].readline()
          time = float( re.findall(r"[\S]+", blocHeader.replace(",", " ")  )[2] )
          if ibloc == 1 :
-            a = pd.read_csv(  blockList[ibloc] , skiprows = 0, header = None , names = [ "x" , "y" , time ] , usecols = [0,1,2] , delim_whitespace = True )
+            a = pd.read_csv(  blockList[ibloc] , skiprows = 0, header = None , names = [ "x" , "y" , time ] , usecols = [0,1,2] , delim_whitespace = True, engine = "c" )
          else :
-            a[time] = pd.read_csv(  blockList[ibloc] , skiprows = 0, header = None , names = [ time ] , usecols = [0]  , delim_whitespace = True )
+            a[time] = pd.read_csv(  blockList[ibloc] , skiprows = 0, header = None , names = [ time ] , usecols = [0]  , delim_whitespace = True, engine = "c" )
 
       #If 2D :
       a.drop( "y" , axis=1, inplace = True )
@@ -41,7 +41,7 @@ def tecplot_HOS(file):
       var = [ s[1:-1] for s in var]
 
       #Return dataFrame
-      return pd.read_csv(  blockList[0] , skiprows = 0, header = None , names = var, delim_whitespace = True )
+      return pd.read_csv(  blockList[0] , skiprows = 0, header = None , names = var, delim_whitespace = True, engine = "c" )
 
 
 if __name__ == "__main__" :
