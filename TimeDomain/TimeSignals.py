@@ -36,21 +36,6 @@ def rampDf(df , rStart, rEnd) :
    return df
 
 
-def read( filename , reader = "bvReader", *args, **kwargs )   :
-   """
-      Read _xAxis signal from file. Reader function should return a dataframe
-   """
-
-   #If reader is string, use correspopnding function
-   
-   if not os.path.exists(filename) :
-      print ( os.path.abspath(filename) + " does not exist" )
-      raise Exception()
-
-   return dicoReader[reader](filename, *args, **kwargs )
-
-
-
 def fillCos( A = 1.0, T = 10. , tMin = 0. , tMax = 50. , n = 200) :
    """ for testing purpose, fill signal with a cosine """
    xAxis = np.linspace( tMin , tMax , n )
