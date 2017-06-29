@@ -57,7 +57,7 @@ def bvReader(filename, headerOnly = False, usePandas = True):
     #Check that header are consistent with channels
     if len(labels) != len(data[0,:]) : labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
 
-    return pd.DataFrame(xAxis , data  , labels)
+    return pd.DataFrame(index = xAxis , data = data  , columns = labels)
 
 
 def bvWriter(filename,  xAxis, data , labels):
