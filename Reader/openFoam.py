@@ -29,10 +29,10 @@ def openFoamReader(filename, *args , **kwargs) :
     return dicoReader.get(fname , OpenFoamReadMotion ) ( filename , *args , **kwargs )
     # .get(fname, OpenFoamReadMotion) means that the method OpenFoamReadMotion is used by default (if filename is not in dicoReader)
 
-def OpenFoamReadForce(fileName, field = "total"):
+def OpenFoamReadForce(filename, field = "total"):
    """
    Read openFoam "forces" file
-   """
+   """ 
    fil = open(filename, "r")
    data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
    fil.close()
@@ -91,7 +91,6 @@ def OpenFoamReadMotion( filename , namesLine = 1 ) :
    #Read header
    with open(filename, "r") as fil :
       header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
-   print header
    df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
    return df
 
