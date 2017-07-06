@@ -79,49 +79,6 @@ def reSample( df , dt = None , xAxis = None , n = None , kind = 'linear') :
    return pd.DataFrame( data = np.transpose(f(xAxis)), index = xAxis , columns = map( lambda x : "reSample("+ x +")" , df.columns  ) )
 
 
-def getUpCrossID_py( se, threshold ) :
-   """
-     Return upcrossing time index (loc, not iloc!)
-   """
-   
-   array = se.values
-   if threshold == "mean" :
-      threshold = np.mean(array)
-   isCross = (array[:-1] <= threshold) & (array[1:] > threshold)
-   return se.index[ np.where( isCross ) ]
-
-
-def upCrossMinMax_py( se, upCrossID = None , threshold = "mean" ) :
-
-   if upCrossID is None :
-      upCrossID = getUpCrossID_py( se.values , threshold= threshold )
-   array = se.values
-   periods = np.empty( ( len(upCrossID)-1 ) )
-   minimum = np.empty( ( len(upCrossID)-1 ) )
-   maximum = np.empty( ( len(upCrossID)-1 ) )
-   minimumTime = np.empty( ( len(upCrossID)-1 ) )
-   maximumTime = np.empty( ( len(upCrossID)-1 ) )
-   for iPoint in range(len(upCrossID)-1) :
-      minimumTime[iPoint] = se.loc[ upCrossID[iPoint] : upCrossID[iPoint + 1] ].argmin()
-      maximumTime[iPoint] = se.loc[ upCrossID[iPoint] : upCrossID[iPoint + 1] ].argmax()
-      periods[iPoint] = upCrossID[iPoint+1] -  upCrossID[iPoint]
-   minimum[:] = se.loc[ minimumTime ]
-   maximum[:] = se.loc[ maximumTime ]
-
-   return pd.DataFrame( data = { "Period" : periods , "Minimum" : minimum , "Maximum" : maximum , "MinimumTime" : minimumTime , "MaximumTime" : maximumTime , "upCrossTime" : upCrossID[:-1]  } )
-
-
-def plotUpCross( upCrossDf , ax = None ) :
-
-   if ax is None : fig , ax = plt.subplots()
-
-   ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label = None )
-   ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
-   ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "max", color ="r")
-   ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "min", color ="b")
-   return ax
-
-
 def dx(df) :
    return  (df.index[-1] - df.index[0]) / ( len(df) - 1 )
 
