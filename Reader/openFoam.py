@@ -5,20 +5,34 @@ import pandas as pd
 
 def openFoamReader(filename, *args , **kwargs) :
     import os
-    dicoReader = { 
-                 "my.dat" : foamStarMotion , 
-                 "forces.dat" : OpenFoamReadForce ,
-			     "motions.dat" : foamStarMotion , 				
-   		  	     }
+    dicoReader = {
+                 "motions.dat" : OpenFoamReadMotion,
+                 "sixDofDomainBody.dat" : OpenFoamReadMotion,
+                 "surfaceElevation.dat" : OpenFoamReadMotion,
+                 "fx.dat" : OpenFoamReadMotion,
+                 "fy.dat" : OpenFoamReadMotion,
+                 "fz.dat" : OpenFoamReadMotion,
+                 "mx.dat" : OpenFoamReadMotion,
+                 "my.dat" : OpenFoamReadMotion,
+                 "mz.dat" : OpenFoamReadMotion,
+                 "PTS_localMotion_pos.dat" : OpenFoamReadMotion,
+                 "PTS_localMotion_vel.dat" : OpenFoamReadMotion,
+                 "PTS_localMotion_acc.dat" : OpenFoamReadMotion,
+                 "forces.dat" : OpenFoamReadForce,
+                 "fFluid.dat" : OpenFoamReadForce,
+                 "mFluid.dat" : OpenFoamReadForce,
+                 "fCstr.dat" : OpenFoamReadForce,
+                 "mCstr.dat" : OpenFoamReadForce,
+                 "acc.dat" : OpenFoamReadForce
+                 }
     fname = os.path.basename(filename) 
-    return dicoReader.get(fname , foamStarMotion ) ( filename , *args , **kwargs )
-    # .get(fname, foamStarMotion) means that the method foamStarMotion is used by default (if filename is not in dicoReader)
+    return dicoReader.get(fname , OpenFoamReadMotion ) ( filename , *args , **kwargs )
+    # .get(fname, OpenFoamReadMotion) means that the method OpenFoamReadMotion is used by default (if filename is not in dicoReader)
 
-
-def OpenFoamReadForce(fileName, field = "total"):
+def OpenFoamReadForce(filename, field = "total"):
    """
    Read openFoam "forces" file
-   """
+   """ 
    fil = open(filename, "r")
    data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
    fil.close()
@@ -69,7 +83,7 @@ def OpenFoamReadForce(fileName, field = "total"):
       labels = [ "Unknown{}".format(j) for j in range(ns)  ]
    return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
-def foamStarMotion( filename , namesLine = 1 ) :
+def OpenFoamReadMotion( filename , namesLine = 1 ) :
    """
    Read motion and internal loads from foamStar
    """
