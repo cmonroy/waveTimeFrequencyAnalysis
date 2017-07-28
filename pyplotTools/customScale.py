@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib.ticker import (NullLocator,  Locator, AutoLocator, FixedLocator)
-from matplotlib.ticker import (NullFormatter, ScalarFormatter, FuncFormatter, LogFormatterSciNotation )
+from matplotlib.ticker import (NullFormatter, ScalarFormatter, FuncFormatter)
 from scipy.stats import norm
 
 """
@@ -45,6 +45,7 @@ class PhiScale(mscale.ScaleBase):
            axis.set_major_locator( PhiLocator() )
            axis.set_major_formatter( ScalarFormatter() )
         else :
+           from matplotlib.ticker import LogFormatterSciNotation #Import here to avoid error at import with older version of matplotlib (<2.0)
            axis.set_major_locator(FixedLocator([1e-5, 1e-4 , 1e-3 , 1e-2, 1e-1 , 0.5 , 1-1e-1 , 1-1e-2 , 1-1e-3 , 1-1e-4 , 1-1e-5]))
            def fmt(x,_):
               if x >= 0.9 : return "1-" + LogFormatterSciNotation()(1-x,_ )
