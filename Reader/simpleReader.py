@@ -44,4 +44,4 @@ def simpleReader(filename, labels = False, headerOnly = False):
       labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
 
    #return xAxis , data  , labels
-   return pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
+   return pd.DataFrame(index=xAxis , data=data , columns=labels)
