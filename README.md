@@ -4,4 +4,4 @@ This git repository contains some python routines dedicated to frequency and tim
 
 ## Installing
 
-pip install https://github.com/BV-DR/waveTimeFrequencyAnalysis
+pip install git+https://github.com/BV-DR/waveTimeFrequencyAnalysis
