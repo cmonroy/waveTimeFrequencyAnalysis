@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 from distutils.core import setup
 
-package_dir= { "dropy" : '.' ,
-              "dropy.Reader" : r"./Reader" ,
-              "dropy.pyplotTools" : r"./pyplotTools" ,
-              "dropy.TimeDomain" : r"./TimeDomain" ,
+package_dir= { "droppy" : '.' ,
+              "droppy.Reader" : r"./Reader" ,
+              "droppy.pyplotTools" : r"./pyplotTools" ,
+              "droppy.TimeDomain" : r"./TimeDomain" ,
              }
 
 packages = package_dir.keys()
 
-setup(name='dropy',
+setup(name='droppy',
       version='1.0',
       description='DR open library, related to waves and sea-keeping',
       author='DR',
