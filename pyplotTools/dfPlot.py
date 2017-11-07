@@ -1,26 +1,70 @@
 from __future__ import print_function
 from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
 
-def dfSurface( df, labels = None ,ax = None , nbColors = 200 , display = True  ) :
-   """
-      Surface plot from dataframe
 
-      y = index
-      x = columns
-      data = data
+def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = True ,
+               polar = False, polarConvention = "seakeeping" , colorbar = False ) :
+   """Surface plot from dataframe
+          index : y or theta
+          columns : x or theta
+          data = data
+          
+      if interpolate is True, data are considered as node value and interpolated in between
+      if interpolate is False, data are considered as center cell value
    """
+   
    if ax is None :
-      fig, ax = plt.subplots()
+      fig = plt.figure()
+      ax = fig.add_subplot(111, polar = polar)
+      if polar : 
+          if polarConvention == "seakeeping" : 
+              ax.set_theta_zero_location("S")
+              ax.set_theta_direction(1)
+          elif polarConvention == "geo" : 
+              ax.set_theta_zero_location("N")
+              ax.set_theta_direction(1)
+          
 
-   ax.contourf( df.columns , df.index , df.values, nbColors )
-   # Other solution
-   # ax.pcolor(colorSurface.x, colorSurface.y,  colorSurface.data)
+   if interpolate :
+      cax = ax.contourf( df.columns , df.index , df.values, nbColors )
+   else :
+      #Check that axis are evenly spaced
+      dx = df.index[1:] - df.index[:-1]
+      dy = df.columns[1:] - df.columns[:-1]
+      if True : #( abs(dx / dx[0] -1)<0.01 ).all() and  (abs(dy / dy[0] -1)<0.01 ).all():
+         dx = dx[0]
+         dy = dy[0] 
+         cax = ax.pcolormesh( np.append( df.columns - 0.5*dy , df.columns[-1] + 0.5*dy ) ,np.append( df.index -0.5*dx , df.index[-1] + 0.5*dx ) , df.values  )
+      else : 
+         raise( Exception ("index is not evenly spaced, try with interpolate = True") )
+        
+   # Add colorbar, make sure to specify tick locations to match desired ticklabels
+   if colorbar : 
+      ax.get_figure().colorbar( cax )      
+         
    return ax
 
 
 
 
 def dfSlider( dfList, labels = None , ax = None , display = True) :
+   """ Interactive 2D plots, with slider to select the frame to display
+   
+   Column is used as x axis
+   Index is used as frame/time (which is selected with the slider)
+
+   :param dfList: List of DataFrame to animate
+   :param labels: labels default = 1,2,3...
+   :param ax: Use existing ax if provided
+   :param display: display the results (wait for next show() otherwise)
+
+   :return:  ax
+
+   """
+
+
    print ("Preparing interactive plot")
    from matplotlib.widgets import Slider
    import numpy as np
@@ -152,7 +196,7 @@ def dfAnimate( df, movieName = None, nShaddow = 0, xRatio= 1.0, rate = 1 , xlim 
          ani.save( movieName +'.mp4' , writer=mywriter)
 
 
-def test() :
+def testSlider() :
    from Spectral import Wif
    wif = Wif.Jonswap( Hs = 2.0 , Tp = 10.0 , Gamma = 1.0 , Heading = 180. )
    #wif = Wif( r"D:\Etudes\HOS\edw\my_10_rcw.wif" )
@@ -160,9 +204,19 @@ def test() :
    df = wif.wave2DC( tmin = 0 , tmax = +200 , dt = 0.2 , xmin = 0. , xmax = +800 , dx = 4.0 , speed = 0.0 )
    df2 = wif.wave2DC( tmin = 0 , tmax = +200 , dt = 0.2 , xmin = 100. , xmax = +800 , dx = 4.0 , speed = 0.0 )
    #dfAnimate(df, nShaddow = 5, xRatio= 1.0, rate = 1)
-   dfSlider([df,df2])
+   dfSlider( [df,df2] )
+   
+
+def testSurfacePlot():
+    df = pd.DataFrame(  index = np.linspace(0,0.5,100) , columns = np.linspace(0,2*np.pi,50), dtype = "float" )
+    df.loc[:,:] = 1
+    for i in range(len(df.columns)):
+       df.iloc[:,i] = np.sin(df.columns[i]) * df.index.values
+    dfSurface(df , polar = True ,  interpolate = True, polarConvention = "geo", colorbar = True)
 
 if __name__ == "__main__" :
 
-   test()
+   print ("Test") 
+   testSurfacePlot( )
+   testSlider()
 
