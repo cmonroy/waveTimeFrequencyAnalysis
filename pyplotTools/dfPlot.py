@@ -4,8 +4,18 @@ import numpy as np
 import pandas as pd
 
 
+
+def centerToEdge( array ) :
+   dx = array[1:] - array[:-1]
+   if (abs(dx / dx[0] - 1)<0.01 ).all()  :
+      return np.append( array - 0.5*dx[0] , array[-1] + 0.5*dx[0] )
+   else :
+      print ("Can not find edge from center if bins are not considered evenly spaced")
+      raise(ValueError())
+
+
 def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = True ,
-               polar = False, polarConvention = "seakeeping" , colorbar = False ) :
+               polar = False, polarConvention = "seakeeping" , colorbar = False , **kwargs ) :
    """Surface plot from dataframe
           index : y or theta
           columns : x or theta
@@ -19,7 +29,7 @@ def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = Tru
       fig = plt.figure()
       ax = fig.add_subplot(111, polar = polar)
       if polar : 
-          if polarConvention == "seakeeping" : 
+          if polarConvention == "seakeeping" :
               ax.set_theta_zero_location("S")
               ax.set_theta_direction(1)
           elif polarConvention == "geo" : 
@@ -28,20 +38,21 @@ def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = Tru
           
 
    if interpolate :
-      cax = ax.contourf( df.columns , df.index , df.values, nbColors )
+      cax = ax.contourf( df.columns.astype(float) , df.index , df.values, nbColors, **kwargs  )
    else :
       #Check that axis are evenly spaced
-      dx = df.index[1:] - df.index[:-1]
-      dy = df.columns[1:] - df.columns[:-1]
-      if True : #( abs(dx / dx[0] -1)<0.01 ).all() and  (abs(dy / dy[0] -1)<0.01 ).all():
-         dx = dx[0]
-         dy = dy[0] 
-         cax = ax.pcolormesh( np.append( df.columns - 0.5*dy , df.columns[-1] + 0.5*dy ) ,np.append( df.index -0.5*dx , df.index[-1] + 0.5*dx ) , df.values  )
-      else : 
-         raise( Exception ("index is not evenly spaced, try with interpolate = True") )
-        
+      try :
+         cax = ax.pcolormesh( centerToEdge ( df.columns.astype(float) ) , centerToEdge ( df.index ) , df.values , **kwargs  )
+      except :
+         raise( Exception ("Index is not evenly spaced, try with interpolate = True") )
+
+   
+   if df.columns.name is not None : 
+       ax.set_xlabel( df.columns.name )
+   if df.index.name is not None :
+       ax.set_ylabel( df.index.name )
    # Add colorbar, make sure to specify tick locations to match desired ticklabels
-   if colorbar : 
+   if colorbar :
       ax.get_figure().colorbar( cax )      
          
    return ax
