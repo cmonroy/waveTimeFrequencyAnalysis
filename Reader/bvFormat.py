@@ -1,28 +1,31 @@
 import pandas as pd
 
-def bvReader(filename, headerOnly = False ):
+def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
     """ Read BV format
     """
 
-    fin = open(filename, 'r')
-    buf = fin.read()
-    fin.close()
-    lines = buf.split('\n')
-    #find the header lines
-    for i, line in enumerate(lines):
-        if line.startswith('#NBCHANNEL'):
-            words = line.split()
-            nbChannel = int(words[1])
-        if line.startswith('#NBTIMESTEPS'):
-            words = line.split()
-            nbTime = int(words[1])
-        if line.startswith('#TIME'):
-            lab_tmp = line.split()
-        if line.startswith('#UNITS'):
-            # not managed yet
-            break
+    if readHeader:
+        fin = open(filename, 'r')
+        buf = fin.read()
+        fin.close()
+        lines = buf.split('\n')
+        #find the header lines
+        for i, line in enumerate(lines):
+            if line.startswith('#NBCHANNEL'):
+                words = line.split()
+                nbChannel = int(words[1])
+            if line.startswith('#NBTIMESTEPS'):
+                words = line.split()
+                nbTime = int(words[1])
+            if line.startswith('#TIME'):
+                lab_tmp = line.split()
+            if line.startswith('#UNITS'):
+                # not managed yet
+                break
+        else:
+            raise Exception('Could not read header data')
     else:
-        raise Exception('Could not read header data')
+        lab_tmp = []
 
     labels = lab_tmp[1:]
     if headerOnly : 
@@ -30,7 +33,7 @@ def bvReader(filename, headerOnly = False ):
 
 
     #Fastest option : pandas (0.3s on test case)
-    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float).as_matrix()
+    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols).as_matrix()
     xAxis = data[:,0]
     data = data[:,1:]
     
