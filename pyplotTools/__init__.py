@@ -3,6 +3,7 @@ from . import pyplotTools , dfPlot , surfacePlot, customScale
 dfSlider = dfPlot.dfSlider
 dfAnimate = dfPlot.dfAnimate
 dfSurface = dfPlot.dfSurface
+dfIsoContour = dfPlot.dfIsoContour
 newColorIterator = pyplotTools.newColorIterator
 markerCycle =pyplotTools.markerCycle
 newMarkerIterator = pyplotTools.newMarkerIterator

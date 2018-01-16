@@ -1,3 +1,10 @@
+"""
+
+   Additional plotting tools for pandas DataFrame
+
+"""
+
+
 from __future__ import print_function
 from matplotlib import pyplot as plt
 import numpy as np
@@ -15,16 +22,16 @@ def centerToEdge( array ) :
 
 
 def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = True ,
-               polar = False, polarConvention = "seakeeping" , colorbar = False , **kwargs ) :
+               polar = False, polarConvention = "seakeeping" , colorbar = False, **kwargs ) :
    """Surface plot from dataframe
           index : y or theta
           columns : x or theta
           data = data
-          
+
       if interpolate is True, data are considered as node value and interpolated in between
       if interpolate is False, data are considered as center cell value
    """
-   
+
    if ax is None :
       fig = plt.figure()
       ax = fig.add_subplot(111, polar = polar)
@@ -35,29 +42,57 @@ def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = Tru
           elif polarConvention == "geo" : 
               ax.set_theta_zero_location("N")
               ax.set_theta_direction(1)
-          
 
    if interpolate :
       cax = ax.contourf( df.columns.astype(float) , df.index , df.values, nbColors, **kwargs  )
    else :
-      #Check that axis are evenly spaced
       try :
          cax = ax.pcolormesh( centerToEdge ( df.columns.astype(float) ) , centerToEdge ( df.index ) , df.values , **kwargs  )
       except :
          raise( Exception ("Index is not evenly spaced, try with interpolate = True") )
 
-   
-   if df.columns.name is not None : 
+   #Add x and y label if contains in the dataFrame
+   if df.columns.name is not None :
        ax.set_xlabel( df.columns.name )
    if df.index.name is not None :
        ax.set_ylabel( df.index.name )
+
    # Add colorbar, make sure to specify tick locations to match desired ticklabels
    if colorbar :
       ax.get_figure().colorbar( cax )      
          
    return ax
+   
 
+def dfIsoContour( df, ax = None , polar = False, polarConvention = "seakeeping" , inline = True , **kwargs ) :
+   """Iso contour plot from dataframe
+          index : y or theta
+          columns : x or theta
+          data = data
+   """
+   if ax is None :
+      fig = plt.figure()
+      ax = fig.add_subplot(111, polar = polar)
+      if polar :
+          if polarConvention == "seakeeping" :
+              ax.set_theta_zero_location("S")
+              ax.set_theta_direction(1)
+          elif polarConvention == "geo" :
+              ax.set_theta_zero_location("N")
+              ax.set_theta_direction(1)
 
+   cax = ax.contour( df.columns.astype(float) , df.index , df.values, **kwargs  )
+
+   if inline :
+      ax.clabel(cax, inline=1 , fontsize=10 ,  fmt  = r"%1.1f")
+
+   ax.legend()
+   #Add x and y label if contains in the dataFrame
+   if df.columns.name is not None :
+       ax.set_xlabel( df.columns.name )
+   if df.index.name is not None :
+       ax.set_ylabel( df.index.name )
+   return ax
 
 
 def dfSlider( dfList, labels = None , ax = None , display = True) :
@@ -110,7 +145,7 @@ def dfSlider( dfList, labels = None , ax = None , display = True) :
    ymax = max( [df.max().max() for df in dfList]  )
    plt.axis( [tmin, tmax, ymin , ymax ] )
 
-   axTime = plt.axes( [0.15, 0.10, 0.75, 0.03] , axisbg='lightgoldenrodyellow')
+   axTime = plt.axes( [0.15, 0.10, 0.75, 0.03] , facecolor='lightgoldenrodyellow')
    sTime = Slider(axTime, 'Time', df.index[0] , df.index[-1] , valinit=a0)
 
    def update(val):
@@ -223,11 +258,13 @@ def testSurfacePlot():
     df.loc[:,:] = 1
     for i in range(len(df.columns)):
        df.iloc[:,i] = np.sin(df.columns[i]) * df.index.values
-    dfSurface(df , polar = True ,  interpolate = True, polarConvention = "geo", colorbar = True)
+    ax = dfSurface(df , polar = True ,  interpolate = True, polarConvention = "geo", colorbar = True)
+    ax = dfIsoContour(df , levels = [0.0 , 0.5 ] , ax = ax)
+    plt.show()
 
 if __name__ == "__main__" :
 
-   print ("Test") 
+   print ("Test")
    testSurfacePlot( )
-   testSlider()
+   #testSlider()
 

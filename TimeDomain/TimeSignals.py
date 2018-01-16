@@ -61,7 +61,7 @@ def reSample( df , dt = None , xAxis = None , n = None , kind = 'linear') :
 
    #For rounding issue, ensure that xAxis is within ts.xAxis
    #xAxis[ np.where( xAxis > np.max(df.index[:]) ) ] = df.index[ np.where( xAxis > np.max(df.index[:]) ) ]
-   return pd.DataFrame( data = np.transpose(f(xAxis)), index = xAxis , columns = map( lambda x : "reSample("+ x +")" , df.columns  ) )
+   return pd.DataFrame( data = np.transpose(f(xAxis)), index = xAxis , columns = df.columns  )
 
 
 def dx(df) :
@@ -131,7 +131,7 @@ def getPSD( df , dw = 0.05, roverlap = 0.5, window='hanning', detrend='constant'
    return pd.DataFrame( data = np.transpose(data), index = xAxis , columns = [ "psd("+ str(x) +")" for  x in df.columns ]  )
 
 
-def fftDf( df , part = "abs") :
+def fftDf( df , part = None, index = "Hz" ) :
    #Handle series or DataFrame
    if type(df) == pd.Series :
       df = pd.DataFrame(df)
@@ -140,12 +140,18 @@ def fftDf( df , part = "abs") :
       ise = False
    res = pd.DataFrame( index = np.fft.rfftfreq( df.index.size, d = dx( df ) ) )
    for col in df.columns :
-      if part == "abs" :
-         res["FFT_"+col] = np.abs( np.fft.rfft(df[col]) )  / (0.5*df.index.size)
-      elif part == "real" :
-         res["FFT_"+col] = np.real( np.fft.rfft(df[col]) ) / (0.5*df.index.size)
-      elif part == "imag" :
-         res["FFT_"+col] = np.imag( np.fft.rfft(df[col]) ) / (0.5*df.index.size)
+      res[col] = np.fft.rfft(df[col])
+      if part is not None :
+          res[col] = part( res[col] )
+
+   res /= (0.5*df.index.size)
+   res.loc[0,:] *= 0.5
+   
+   if index == "Hz" : 
+      pass
+   elif "rad" in index.lower()  :
+      res.index *= 2*np.pi
+
    if ise :
       return res.iloc[:,0]
    else :

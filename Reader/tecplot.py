@@ -10,8 +10,12 @@ def tecplot_HOS(file):
    """
    import pandas as pd
    import re
-   from cStringIO import StringIO
-   arrays = []
+
+   try :  #Python 3
+      from io import StringIO
+   except : #Python 2
+      from cStringIO import StringIO
+
    with open(file, 'r') as a:
       data = a.read()
    blockList = [StringIO(str_) for str_ in data.split("\nZONE")]
@@ -46,8 +50,10 @@ def tecplot_HOS(file):
 
 if __name__ == "__main__" :
 
+   print ("Plot tecplot files")
+
    import argparse
-   from pyplotTools import  dfSlider
+   from droppy.pyplotTools import  dfSlider
    parser = argparse.ArgumentParser(description='Visualize HOS 2D results' ,  formatter_class = argparse.RawTextHelpFormatter)
    parser.add_argument( '-nShaddow',   help='For animation' , type = int,  default=0)
    parser.add_argument( "inputFile" )

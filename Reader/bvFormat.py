@@ -1,10 +1,8 @@
 import pandas as pd
 
-def bvReader(filename, headerOnly = False, usePandas = True):
-
-
-    """ Read BV format  """
-    if usePandas : import pandas as pd
+def bvReader(filename, headerOnly = False ):
+    """ Read BV format
+    """
 
     fin = open(filename, 'r')
     buf = fin.read()
@@ -30,11 +28,13 @@ def bvReader(filename, headerOnly = False, usePandas = True):
     if headerOnly : 
        return [] , [] , labels
 
-    if usePandas :
-       #Fastest option : pandas (0.3s on test case)
-       data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float).as_matrix()
-       xAxis = data[:,0]
-       data = data[:,1:]
+
+    #Fastest option : pandas (0.3s on test case)
+    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float).as_matrix()
+    xAxis = data[:,0]
+    data = data[:,1:]
+    
+    """
     else :
        #print "Pandas not available"
        #Second fastest option (0.7s on test case)
@@ -48,7 +48,6 @@ def bvReader(filename, headerOnly = False, usePandas = True):
              data[iline,:] =x[1:] #0.20s
              iline += 1
     #Slowest option : numpy  (1.3s on test case)
-    """
     data = np.loadtxt(filename)
     xAxis = data[:,0]
     data = data[:,1:]
