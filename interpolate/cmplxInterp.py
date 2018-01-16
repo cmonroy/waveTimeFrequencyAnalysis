@@ -4,6 +4,22 @@
 
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import splrep, splev
+
+
+"""
+  Wrap splrep/splev to get same behaviour as InterpolatedUnivariateSpline
+
+  Compared to InterpolatedUnivariateSpline, splrep_splev allows for periodic boundary
+
+"""
+class splrep_splev():
+    def __init__(self,  x , y , **kwargs ):
+        self.splrep = splrep(x,y ,**kwargs)
+
+    def __call__( self , x ) :
+        return splev( x , self.splrep )
+
 
 class InterpolatedComplexSpline( object  ) :
    """  Interpolator for complex numbers, works like (and uses) scipy "InterpolatedUnivariateSpline"
@@ -15,27 +31,34 @@ class InterpolatedComplexSpline( object  ) :
         interpvalues = interpolator( x_new )
    """
 
-   def __init__(self,  x , y , cmplxMethod  = "reim", **kwargs ):
+   def __init__(self,  x , y , cmplxMethod  = "reim", baseInterpolator = InterpolatedUnivariateSpline ,  **kwargs ):
       """Construct the interpolator
 
       x : Original
       y : Original data
       cmplxMethod : Way to deal with complex interpolation ("reim" or "mod" )
-      **kwargs : argument accepted by scipy.interpolate.InterpolatedUnivariateSpline
+      **kwargs : argument accepted by baseInterpolator
       """
 
       self.cmplxMethod = cmplxMethod
 
       #Interpolate re and imaginary separately
       if self.cmplxMethod == "reim" :
-         self.f_re = InterpolatedUnivariateSpline( x , np.real(y) , **kwargs )
-         self.f_im = InterpolatedUnivariateSpline( x , np.imag(y) , **kwargs )
+         self.f_re = baseInterpolator( x , np.real(y) , **kwargs )
+         self.f_im = baseInterpolator( x , np.imag(y) , **kwargs )
 
       #Phase from reim interpolation, module interpolated
       elif self.cmplxMethod == "mod" :
-         self.f_abs = InterpolatedUnivariateSpline( x , np.abs(y) , **kwargs )
-         self.f_re = InterpolatedUnivariateSpline( x , np.real(y) , **kwargs )
-         self.f_im = InterpolatedUnivariateSpline( x , np.imag(y) , **kwargs )
+         self.f_abs = baseInterpolator( x , np.abs(y) , **kwargs )
+         self.f_re = baseInterpolator( x , np.real(y) , **kwargs )
+         self.f_im = baseInterpolator( x , np.imag(y) , **kwargs )
+         
+      elif self.cmplxMethod == "modPhi" :
+         self.f_abs = baseInterpolator( x , np.abs(y) , **kwargs )
+         #Arrange phi to be in 0->2*pi
+         self.f_phi = baseInterpolator( x , np.abs(y) , **kwargs )
+
+
       else :
          raise(NotImplementedError)
 
@@ -60,6 +83,7 @@ if __name__ == "__main__" :
 
     print ("Illustrate interpolation of complex")
     from matplotlib import pyplot as plt
+
     s = np.linspace( 0 , 2*np.pi , 10 )
     s_new = np.linspace( 0 , 2*np.pi , 200 )
 
@@ -89,5 +113,3 @@ if __name__ == "__main__" :
     axre.set_ylabel( "Real Part" )
     fig.tight_layout()
     plt.show()
-
-
