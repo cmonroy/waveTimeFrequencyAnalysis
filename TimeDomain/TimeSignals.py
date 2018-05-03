@@ -106,7 +106,7 @@ def slidingFFT( se, T  ,  n = 1 , tStart = None , preSample = False , nHarmo = 5
    return pd.DataFrame( data = res , index = new.index , columns = map( lambda x : "Harmo {:} ({:})".format(x , se.name  ) , range(nHarmo)  ) )
 
 
-def getPSD( df , dw = 0.05, roverlap = 0.5, window='hanning', detrend='constant') :
+def getPSD( df , dw = 0.05, roverlap = 0.5, window='hanning', detrend='constant', unit="rad") :
    """
       Compute the power spectral density
    """
@@ -127,7 +127,8 @@ def getPSD( df , dw = 0.05, roverlap = 0.5, window='hanning', detrend='constant'
    for iSig in range(df.shape[1]) :
       test = welch( df.values[:,iSig]  , fs = 1. / dx(df) , window=window, nperseg=nperseg, noverlap=noverlap, nfft=nfft, detrend=detrend, return_onesided=True, scaling='density')
       data.append( test[1] / (2*pi) )
-   xAxis = test[0][:] * 2*pi
+   if unit in ["Hz","hz"]: xAxis = test[0][:]
+   else: xAxis = test[0][:] * 2*pi
    return pd.DataFrame( data = np.transpose(data), index = xAxis , columns = [ "psd("+ str(x) +")" for  x in df.columns ]  )
 
 
@@ -163,6 +164,10 @@ def bandPass(df , fmin = None, fmax = None , unit = "Hz" ) :
       Return filtered signal
    """
    from scipy.fftpack import rfft, irfft, rfftfreq  #Warning convention of scipy.fftpack != numpy.fft   !!!
+   if unit in ["rad","rad/s","Rad","Rad/s"]:
+       if fmin is not None: fmin = fmin / (2*pi)
+       if fmax is not None: fmax = fmax / (2*pi)
+   
    if type(df) == pd.Series :
       df = pd.DataFrame(df)
       ise = True
@@ -330,7 +335,10 @@ def testBandPass( display= True ) :
    ax.set_xlim([ 50,60 ])
    if display : 
       plt.show()
-
+      
+def getRMS(df):
+    rms = np.sqrt(df.mean()**2+df.std()**2) 
+    return rms
 
 if __name__ == '__main__' :
 
