@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
     """ Read BV format
@@ -62,22 +63,33 @@ def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
     return pd.DataFrame(index = xAxis , data = data  , columns = labels)
 
 
-def bvWriter(filename,  xAxis, data , labels):
+def bvWriter(filename,  xAxis, data , labels=None, units=None):
     """
         Write a TS file in BV format
     """
-    nbTime, nbChannel = np.shape(data)
-    fichier = open(filename, 'w')
-    print >> fichier, "#"
-    print >> fichier, "#TIMESERIES"
-    print >> fichier, "#NBCHANNEL " + str(nbChannel)
-    print >> fichier, "#NBTIMESTEPS " + str(nbTime) 
-    print >> fichier, "#TIME " + " ".join(map(str, labels))
-    print >> fichier, "#UNITS" + nbChannel*" Unk.unit"
+    rt = '\n'
+    try:
+        nbTime, nbChannel = np.shape(data)
+    except:
+        nbTime = np.shape(data)[0]
+        nbChannel = 1
+    
+    if labels==None: labels = ['Label-'+str(i+1) for i in range(nbChannel)]
+    if units==None: units = ['Unit-'+str(i+1) for i in range(nbChannel)]
+    
+    
+    f = open(filename, 'w')
+    f.write("#"+rt)
+    f.write("#TIMESERIES"+rt)
+    f.write("#NBCHANNEL " + str(nbChannel)+rt)
+    f.write("#NBTIMESTEPS " + str(nbTime)+rt)
+    f.write("#TIME " + " ".join(map(str, labels))+rt)
+    f.write("#UNITS " + " ".join(map(str, units))+rt)
     # use numpy method for array dumping and loading
     all = np.empty((nbTime, nbChannel+1), dtype=float)
     all[:,0] = xAxis
-    all[:,1:] = data
-    np.savetxt( fichier, all )
-    fichier.close()
+    if nbChannel==1: all[:,1] = data
+    else: all[:,1:] = data
+    np.savetxt( f, all )
+    f.close()
     return
