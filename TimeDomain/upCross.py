@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 
 def getUpCrossID( array, threshold ) :
-   """
-      Get the upcrossing indices
+   """Get the upcrossing indices
 
       Input :
               array : numpy 1D array
@@ -13,6 +12,20 @@ def getUpCrossID( array, threshold ) :
 
    """
    isCross = (array[:-1] <= threshold) & (array[1:] > threshold)
+   return np.where( isCross )[0]
+
+
+def getDownCrossID( array, threshold ) :
+   """Get the downcrossing indices
+
+      Input :
+              array : numpy 1D array
+              threshold
+      Output :
+              upCrossing indexes (numpy 1D array of integer)
+
+   """
+   isCross = (array[:-1] > threshold) & (array[1:] <= threshold)
    return np.where( isCross )[0]
 
 
@@ -40,9 +53,9 @@ def upCrossMinMax( se, upCrossID = None , threshold = "mean" ) :
    """
       Perform the "whole" upcrossing analysis
    """
-   
+
    array = se.values
-   
+
    #Compute threshold if not given
    if threshold == "mean" :
       threshold = np.mean(array)
@@ -51,6 +64,11 @@ def upCrossMinMax( se, upCrossID = None , threshold = "mean" ) :
    #Compute upCrossing index if not given
    if upCrossID is None :
       upCrossID = getUpCrossID( array , threshold = threshold )
+
+   if len(upCrossID) == 0 :
+       return pd.DataFrame( data = { "Minimum" : [] , "Maximum" : [] ,
+                                 "MinimumTime" : [] , "MaximumTime" : [] ,
+                                 "upCrossTime" : [] , "Period": []  } )
 
    #Fill values
    periods = np.empty( ( len(upCrossID)-1 )  , dtype = type(se.index.dtype) )
@@ -62,20 +80,26 @@ def upCrossMinMax( se, upCrossID = None , threshold = "mean" ) :
    return pd.DataFrame( data = { "Minimum" : minimum , "Maximum" : maximum ,
                                  "MinimumTime" : minimumTime , "MaximumTime" : maximumTime ,
                                  "upCrossTime" : upCrossTime , "Period": periods  } )
-                                 
 
 
-def plotUpCross( upCrossDf , ax = None ) :
+
+def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
    """
       Plot time trace together with extracted maxima
    """
    from matplotlib import pyplot as plt
    if ax is None : fig , ax = plt.subplots()
-
-   ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label = None )
+   if cycleLimits :
+       max_ = upCrossDf.Maximum.max()
+       min_ = upCrossDf.Minimum.min()
+       for i in range(len(upCrossDf)) :
+          ax.plot( [upCrossDf.upCrossTime[i], upCrossDf.upCrossTime[i]] , [min_, max_]  , "--" , label = None )
+   else :
+       ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label = "Cycle bounds" )
    ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
    ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "max", color ="r")
    ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "min", color ="b")
+   ax.legend(loc = 2)
    return ax
-   
+
 
