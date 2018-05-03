@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from . import pyplotTools , dfPlot , surfacePlot, customScale
+from . import pyplotTools , dfPlot , surfacePlot, kde_scatter
 dfSlider = dfPlot.dfSlider
 dfAnimate = dfPlot.dfAnimate
 dfSurface = dfPlot.dfSurface
@@ -12,4 +12,4 @@ newLinestyleIterator = pyplotTools.newLinestyleIterator
 pyplotLegend = pyplotTools.pyplotLegend
 autoscale_y =pyplotTools.autoscale_y
 mapFunction = surfacePlot.mapFunction
-PhiScale = customScale.PhiScale
+kde_scatter = kde_scatter.kde_scatter

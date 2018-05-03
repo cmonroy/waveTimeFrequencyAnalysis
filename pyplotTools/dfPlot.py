@@ -35,11 +35,11 @@ def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = Tru
    if ax is None :
       fig = plt.figure()
       ax = fig.add_subplot(111, polar = polar)
-      if polar : 
+      if polar :
           if polarConvention == "seakeeping" :
               ax.set_theta_zero_location("S")
               ax.set_theta_direction(1)
-          elif polarConvention == "geo" : 
+          elif polarConvention == "geo" :
               ax.set_theta_zero_location("N")
               ax.set_theta_direction(1)
 
@@ -59,10 +59,10 @@ def dfSurface( df, labels = None ,ax = None , nbColors = 200 , interpolate = Tru
 
    # Add colorbar, make sure to specify tick locations to match desired ticklabels
    if colorbar :
-      ax.get_figure().colorbar( cax )      
-         
+      ax.get_figure().colorbar( cax )
+
    return ax
-   
+
 
 def dfIsoContour( df, ax = None , polar = False, polarConvention = "seakeeping" , inline = True , **kwargs ) :
    """Iso contour plot from dataframe
@@ -97,7 +97,7 @@ def dfIsoContour( df, ax = None , polar = False, polarConvention = "seakeeping" 
 
 def dfSlider( dfList, labels = None , ax = None , display = True) :
    """ Interactive 2D plots, with slider to select the frame to display
-   
+
    Column is used as x axis
    Index is used as frame/time (which is selected with the slider)
 
@@ -143,7 +143,10 @@ def dfSlider( dfList, labels = None , ax = None , display = True) :
    tmax = max( [max(df.columns) for df in dfList]  )
    ymin = min( [df.min().min() for df in dfList]  )
    ymax = max( [df.max().max() for df in dfList]  )
-   plt.axis( [tmin, tmax, ymin , ymax ] )
+
+   #plt.axis( [tmin, tmax, ymin , ymax ] )
+   ax.set_xlim( [tmin, tmax] )
+   ax.set_ylim( [ymin, ymax] )
 
    axTime = plt.axes( [0.15, 0.10, 0.75, 0.03] , facecolor='lightgoldenrodyellow')
    sTime = Slider(axTime, 'Time', df.index[0] , df.index[-1] , valinit=a0)
@@ -157,7 +160,7 @@ def dfSlider( dfList, labels = None , ax = None , display = True) :
          t.append ( "{:.1f}".format(  df.index[ itime ]) )
          currentValue = val
       ax.set_title( " ".join(t) )
-      fig.canvas.draw_idle()
+      ax.get_figure().canvas.draw_idle()
 
    update( currentValue )
 
@@ -169,7 +172,7 @@ def dfSlider( dfList, labels = None , ax = None , display = True) :
       dt = dfList[0].index[1]-dfList[0].index[0]
       sTime.set_val(currentValue + s*dt )
 
-   fig.canvas.mpl_connect('scroll_event', scroll )
+   ax.get_figure().canvas.mpl_connect('scroll_event', scroll )
    sTime.on_changed(update)
 
    if display :
@@ -180,11 +183,11 @@ def dfSlider( dfList, labels = None , ax = None , display = True) :
 
 
 
-def dfAnimate( df, movieName = None, nShaddow = 0, xRatio= 1.0, rate = 1 , xlim = None , ylim = None , xlabel = "x(m)" , ylabel = "Elevation(m)") :
+def dfAnimate( df, movieName = None, nShaddow = 0, xRatio= 1.0, rate = 1 , xlim = None , ylim = None , xlabel = "x(m)" , ylabel = "Elevation(m)", codec = "libx264") :
       """
          Animate a dataFrame where time is the index, and columns are the "spatial" position
       """
-      
+
       from matplotlib import animation
 
       print ("Making animation file : " , movieName)
@@ -207,11 +210,11 @@ def dfAnimate( df, movieName = None, nShaddow = 0, xRatio= 1.0, rate = 1 , xlim 
             color = "blue"
          ltemp,  = ax.plot( [], [], lw=1 , alpha = 1-i*1./nShaddow , color = color)
          ls.append(ltemp)
-   
+
       xVal = df.columns
 
       ax.grid(True)
-      
+
       if xlim :
         ax.set_xlim( xlim )
       else :
@@ -238,7 +241,7 @@ def dfAnimate( df, movieName = None, nShaddow = 0, xRatio= 1.0, rate = 1 , xlim 
       if movieName is None :
          plt.show()
       else :
-         mywriter = animation.FFMpegWriter(fps = 25 , codec="libx264")
+         mywriter = animation.FFMpegWriter(fps = 25, codec = codec)
          ani.save( movieName +'.mp4' , writer=mywriter)
 
 
@@ -251,7 +254,7 @@ def testSlider() :
    df2 = wif.wave2DC( tmin = 0 , tmax = +200 , dt = 0.2 , xmin = 100. , xmax = +800 , dx = 4.0 , speed = 0.0 )
    #dfAnimate(df, nShaddow = 5, xRatio= 1.0, rate = 1)
    dfSlider( [df,df2] )
-   
+
 
 def testSurfacePlot():
     df = pd.DataFrame(  index = np.linspace(0,0.5,100) , columns = np.linspace(0,2*np.pi,50), dtype = "float" )

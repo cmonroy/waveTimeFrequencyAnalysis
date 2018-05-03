@@ -1,24 +1,28 @@
+import matplotlib
 
 import itertools
 colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
 def newColorIterator() :
-   return itertools.cycle(colorCycle)
+    return itertools.cycle(colorCycle)
+
 
 markerCycle = ('o', 'v', "s", '*' , 'D')
 def newMarkerIterator() :
-   return itertools.cycle(markerCycle)
+    return itertools.cycle(markerCycle)
+
 
 linestyleCycle = ('-', '--', '-.', ':')
 def newLinestyleIterator() :
-   return itertools.cycle(linestyleCycle)
-   
+    return itertools.cycle(linestyleCycle)
+
+
 def pyplotLegend(plt):
-   ax = plt.get_axes()
-   handles, labels =  ax[0].get_legend_handles_labels()
-   uniqueLabels = sorted(list(set(labels )))
-   uniqueHandles = [handles[labels.index(l)] for l in uniqueLabels ]
-   return uniqueHandles, uniqueLabels
-   
+    ax = plt.get_axes()
+    handles, labels =  ax[0].get_legend_handles_labels()
+    uniqueLabels = sorted(list(set(labels )))
+    uniqueHandles = [handles[labels.index(l)] for l in uniqueLabels ]
+    return uniqueHandles, uniqueLabels
+
 
 def autoscale_y(ax,margin=0.1):
     """This function rescales the y-axis based on the data that is visible given the current xlim of the axis.
