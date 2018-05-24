@@ -63,7 +63,7 @@ def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
     return pd.DataFrame(index = xAxis , data = data  , columns = labels)
 
 
-def bvWriter(filename,  xAxis, data , labels=None, units=None):
+def bvWriter(filename,  xAxis, data , labels=[], units=[]):
     """
         Write a TS file in BV format
     """
@@ -74,8 +74,8 @@ def bvWriter(filename,  xAxis, data , labels=None, units=None):
         nbTime = np.shape(data)[0]
         nbChannel = 1
     
-    if labels==None: labels = ['Label-'+str(i+1) for i in range(nbChannel)]
-    if units==None: units = ['Unit-'+str(i+1) for i in range(nbChannel)]
+    if len(labels)<1: labels = ['Label-'+str(i+1) for i in range(nbChannel)]
+    if len(units)<1: units = ['Unit-'+str(i+1) for i in range(nbChannel)]
     
     
     f = open(filename, 'w')
