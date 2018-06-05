@@ -13,9 +13,9 @@ from scipy.interpolate import splrep, splev
   Compared to InterpolatedUnivariateSpline, splrep_splev allows for periodic boundary
 
 """
-class splrep_splev():
-    def __init__(self,  x , y , **kwargs ):
-        self.splrep = splrep(x,y ,**kwargs)
+class FitSpline():
+    def __init__(self,  x , y , *args, **kwargs ):
+        self.splrep = splrep(x,y ,*args, **kwargs)
 
     def __call__( self , x ) :
         return splev( x , self.splrep )
@@ -31,7 +31,7 @@ class InterpolatedComplexSpline( object  ) :
         interpvalues = interpolator( x_new )
    """
 
-   def __init__(self,  x , y , cmplxMethod  = "reim", baseInterpolator = InterpolatedUnivariateSpline ,  **kwargs ):
+   def __init__(self,  x , y , cmplxMethod  = "reim", baseInterpolator = InterpolatedUnivariateSpline , **kwargs ):
       """Construct the interpolator
 
       x : Original
