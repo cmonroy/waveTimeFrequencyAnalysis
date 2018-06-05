@@ -27,6 +27,11 @@ def dfRead( filename , reader , *args , **kwargs  ) :
       Read and return as a dataFrame
    """
    import pandas as pd
+   
+   if reader not in dicoReader.keys() :
+      print ("Unknown reader, please choose within : {}".format(  list(dicoReader.keys() ) ))
+      return
+
    res = dicoReader[reader] (filename , *args , **kwargs )
 
    if type(res) == tuple :
