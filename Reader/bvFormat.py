@@ -63,7 +63,7 @@ def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
     return pd.DataFrame(index = xAxis , data = data  , columns = labels)
 
 
-def bvWriter(filename,  xAxis, data , labels=None, units=None):
+def bvWriter(filename,  xAxis, data , labels=None, units=None, comment=''):
     """
         Write a TS file in BV format
     """
@@ -79,7 +79,7 @@ def bvWriter(filename,  xAxis, data , labels=None, units=None):
     
     
     f = open(filename, 'w')
-    f.write("#"+rt)
+    f.write("# "+comment+rt)
     f.write("#TIMESERIES"+rt)
     f.write("#NBCHANNEL " + str(nbChannel)+rt)
     f.write("#NBTIMESTEPS " + str(nbTime)+rt)

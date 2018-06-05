@@ -45,7 +45,7 @@ def OpenFoamReadForce(filename, field = "total"):
       labels = ["Fx" , "Fy" , "Fz" , "Mx" , "My" , "Mz"]
 
    for i, l in enumerate(data) :
-      parsedArray[i,:] = map(float , l[1:])
+      parsedArray[i,:] = [ float(k) for k in l[1:] ]
 
    if ns == 12 :
       if field == "total"  :
