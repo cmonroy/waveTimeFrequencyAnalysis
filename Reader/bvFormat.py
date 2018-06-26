@@ -34,28 +34,9 @@ def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
 
 
     #Fastest option : pandas (0.3s on test case)
-    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols).as_matrix()
+    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols).values
     xAxis = data[:,0]
     data = data[:,1:]
-    
-    """
-    else :
-       #print "Pandas not available"
-       #Second fastest option (0.7s on test case)
-       xAxis = np.zeros( (nbTime) )
-       data = np.zeros( (nbTime, nbChannel) )
-       iline = 0
-       for line in lines :
-          if line.strip() and not line.startswith("#") :
-             x = map( float, line.split() )  # str => float : 0.3s , line.split() => 0.2s
-             xAxis[iline] = x[0]  #0.03s
-             data[iline,:] =x[1:] #0.20s
-             iline += 1
-    #Slowest option : numpy  (1.3s on test case)
-    data = np.loadtxt(filename)
-    xAxis = data[:,0]
-    data = data[:,1:]
-    """
 
     #Check that header are consistent with channels
     if len(labels) != len(data[0,:]) : labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
