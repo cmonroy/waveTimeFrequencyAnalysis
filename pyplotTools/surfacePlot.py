@@ -13,7 +13,7 @@ def mapFunction( x , y , func , ax = None, arrayInput = False, n = 10, title = N
 
    if ax is None :
       fig , ax = plt.subplots()
-      
+
    X , Y = np.meshgrid( x , y )
 
    if not arrayInput :
@@ -22,13 +22,13 @@ def mapFunction( x , y , func , ax = None, arrayInput = False, n = 10, title = N
       Z = func( np.stack( [ X.flatten() , Y.flatten() ]) )
 
    cax = ax.contourf( X , Y , Z , n , **kwargs)
-   
+
    if colorbar  :
        cbar = ax.get_figure().colorbar(cax)
        if colorbar_label is not False:
           cbar.set_label(colorbar_label)
 
-   if title is not None : 
+   if title is not None :
       ax.set_title(title)
 
    return ax
@@ -42,7 +42,7 @@ if __name__ == "__main__" :
    mapFunction( x , y , func, n = 100, colorbar = True, colorbar_label = 'Density' )
    plt.show()
 
-   
+
 
 
 
