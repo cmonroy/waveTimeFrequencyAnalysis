@@ -39,6 +39,7 @@ def dfRead( filename , reader = "auto", **kwargs  ) :
         """
         if os.path.splitext(filename)[-1] == ".ts" : reader = "bvReader"
         elif os.path.splitext(filename)[-1] == ".h5" : reader = "bvReader_h5"
+        elif filename[-6:] == ".ts.gz" : reader = "bvReader"
         else : raise(Exception("Can not infer reader type for " + filename))
 
     if reader not in dicoReader.keys() :
@@ -51,3 +52,7 @@ def dfRead( filename , reader = "auto", **kwargs  ) :
         return pd.DataFrame( index = res[0]  , data = res[1] , columns = res[2] )
     else :
         return res
+
+
+def dfWrite( filename, df, writer = "auto", **kwargs  ) :
+    bvWriter(filename,  xAxis=df.index, data=df.values , labels=df.columns, units=[], comment='', **kwargs)

@@ -1,66 +1,77 @@
 import pandas as pd
 import numpy as np
+import os
+import gzip
 
-def bvReader(filename, headerOnly = False, readHeader=True, usecols=None):
+
+
+def openCompressed(filename, mode = "r", compression = "infer" ) :
+    if compression == "infer" :
+        if os.path.splitext(filename)[-1] == ".gz":
+            compression_ = "gzip"
+        else :
+            compression_ = None
+    else :
+        compression_ = compression
+
+    if compression_ is None :
+        f = open( filename, mode)
+    elif compression_ == "gzip" :
+        f = gzip.open( filename, mode+"t")
+
+    return f
+
+
+
+def bvReader(filename, headerOnly = False, compression = "infer", usecols=None):
     """ Read BV format
     """
 
-    if readHeader:
-        fin = open(filename, 'r')
-        buf = fin.read()
-        fin.close()
-        lines = buf.split('\n')
-        #find the header lines
-        for i, line in enumerate(lines):
-            if line.startswith('#NBCHANNEL'):
-                words = line.split()
-                nbChannel = int(words[1])
-            if line.startswith('#NBTIMESTEPS'):
-                words = line.split()
-                nbTime = int(words[1])
-            if line.startswith('#TIME'):
-                lab_tmp = line.split()
-            if line.startswith('#UNITS'):
-                # not managed yet
-                break
-        else:
-            raise Exception('Could not read header data')
-    else:
-        lab_tmp = []
+    f = openCompressed( filename, "r", compression = compression)
+
+    #Parse header
+    line = f.readline()
+    while not line.startswith('#UNITS'):
+        if line.startswith('#TIME'):
+            lab_tmp = line.split()
+        line = f.readline()
 
     labels = lab_tmp[1:]
-    if headerOnly : 
-       return [] , [] , labels
+
+    if headerOnly :
+        return [] , [] , labels
+
+    #Fastest option
+    df = pd.read_csv(f, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols, index_col = 0 )
+
+    print (len(labels) , df.shape[1] )
+    if len(labels) != df.shape[1] : labels = [ "Unknown{}".format(j) for j in range(df.shape[1])  ]
+    df.columns = labels
+    f.close()
+
+    return df
 
 
-    #Fastest option : pandas (0.3s on test case)
-    data = pd.read_csv(filename, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols).values
-    xAxis = data[:,0]
-    data = data[:,1:]
-
-    #Check that header are consistent with channels
-    if len(labels) != len(data[0,:]) : labels = [ "Unknown{}".format(j) for j in range(len(data[0,:]))  ]
-
-    return pd.DataFrame(index = xAxis , data = data  , columns = labels)
-
-
-def bvWriter(filename,  xAxis, data , labels=[], units=[], comment=''):
+def bvWriter(filename,  xAxis, data , labels=[], units=[], comment='', compression = "infer"):
     """
         Write a TS file in BV format
     """
+    from droppy.misc import print_options
+
     rt = '\n'
     try:
         nbTime, nbChannel = np.shape(data)
     except:
         nbTime = np.shape(data)[0]
         nbChannel = 1
-    
-    if len(labels)<1: labels = ['Label-'+str(i+1) for i in range(nbChannel)]
-    if len(units)<1: units = ['Unit-'+str(i+1) for i in range(nbChannel)]
-    
-    
-    f = open(filename, 'w')
-    f.write("# "+comment+rt)
+
+    if len(labels) < 1: labels = ['Label-' + str(i+1) for i in range(nbChannel)]
+    if len(units) < 1: units = ['Unit-' + str(i+1) for i in range(nbChannel)]
+
+
+    f = openCompressed( filename, "w", compression = compression)
+
+    if comment.strip() : f.write("# "+comment+rt)
     f.write("#TIMESERIES"+rt)
     f.write("#NBCHANNEL " + str(nbChannel)+rt)
     f.write("#NBTIMESTEPS " + str(nbTime)+rt)
@@ -69,8 +80,9 @@ def bvWriter(filename,  xAxis, data , labels=[], units=[], comment=''):
     # use numpy method for array dumping and loading
     all = np.empty((nbTime, nbChannel+1), dtype=float)
     all[:,0] = xAxis
-    if nbChannel==1: all[:,1] = data
+
+    if nbChannel == 1: all[:,1] = data
     else: all[:,1:] = data
-    np.savetxt( f, all )
+    np.savetxt( f, all, fmt = "%.5e" )
     f.close()
     return
