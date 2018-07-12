@@ -49,10 +49,24 @@ def dfRead( filename , reader = "auto", **kwargs  ) :
     res = dicoReader[reader] (filename , **kwargs )
 
     if type(res) == tuple :
-        return pd.DataFrame( index = res[0]  , data = res[1] , columns = res[2] )
+        return pd.DataFrame( index = res[0]  , data = res[1] , columns = res[2] , dtype = float)
     else :
         return res
 
 
 def dfWrite( filename, df, writer = "auto", **kwargs  ) :
-    bvWriter(filename,  xAxis=df.index, data=df.values , labels=df.columns, units=[], comment='', **kwargs)
+
+    if writer == "auto" :
+        """
+        Choose reader based on extension
+        """
+        if os.path.splitext(filename)[-1] == ".ts" : writer = "bvWriter"
+        elif os.path.splitext(filename)[-1] == ".h5" : writer = "bvWriter_h5"
+        elif filename[-6:] == ".ts.gz" : writer = "bvWriter"
+        else : raise(Exception("Can not infer reader type for " + filename))
+
+    if writer not in dicoWriter.keys() :
+        print ("Unknown writter, please choose within : {}".format(  list(dicoWriter.keys() ) ))
+        return
+
+    dicoWriter[writer] (filename, xAxis=df.index, data=df.values, labels=df.columns, **kwargs )
