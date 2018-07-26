@@ -20,16 +20,22 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False ) :
     return time, data, label
 
 
-def bvWriter_h5(filename, xAxis , data, labels, datasetName = "Data", compression = None ):
+def bvWriter_h5(filename, xAxis , data, labels, datasetName = "Data", compression = None, chunks = None, dtype = "float" ):
     """
         Write a TS file in BV format
     """
 
-    with h5py.File(filename, "w") as f:
+    chunksTime = None
+    if compression :
+        chunks = (len(xAxis),1)
 
-        f.create_dataset( "Time", data = xAxis,  dtype='float', compression=compression)
+    if chunks is not None :
+       chunksTime = (chunks[0], )
+
+    with h5py.File(filename, "w") as f:
+        f.create_dataset( "Time", data = xAxis,  dtype=dtype, compression=compression , chunks = chunksTime)
         f.create_dataset( "Channel", data = labels, dtype=h5py.special_dtype(vlen=str), compression=compression)
-        f.create_dataset( datasetName, data = data,  dtype='float', compression=compression)
+        f.create_dataset( datasetName, data = data,  dtype=dtype, compression=compression,  chunks=chunks)
 
         #Set dimension scale
         f[datasetName].dims.create_scale(f["Time"], "Time")
