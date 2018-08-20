@@ -44,7 +44,6 @@ def bvReader(filename, headerOnly = False, compression = "infer", usecols=None):
     #Fastest option
     df = pd.read_csv(f, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols, index_col = 0 )
 
-    print (len(labels) , df.shape[1] )
     if len(labels) != df.shape[1] : labels = [ "Unknown{}".format(j) for j in range(df.shape[1])  ]
     df.columns = labels
     f.close()
