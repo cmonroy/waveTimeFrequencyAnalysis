@@ -37,9 +37,13 @@ def bvReader(filename, headerOnly = False, compression = "infer", usecols=None):
         line = f.readline()
 
     labels = lab_tmp[1:]
+    if headerOnly : 
+       return [] , [] , labels
 
-    if headerOnly :
-        return [] , [] , labels
+    if (usecols is not None) and (type(usecols[0]) is not np.int):
+        labels_tmp = usecols
+        usecols = [0] + [labels.index(u)+1 for u in usecols]
+        labels = labels_tmp
 
     #Fastest option
     df = pd.read_csv(f, comment = "#" , header=None , delim_whitespace=True, dtype = float, usecols=usecols, index_col = 0 )

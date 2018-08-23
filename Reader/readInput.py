@@ -39,9 +39,7 @@ def readInput(filename, iParam=[], rParam=[], lParam=[], sParam=[], aParam=[], d
     params = dict(default)
     config = configparser.ConfigParser()
     config.read(filename)
-    
-    print(config.keys())
-    
+       
     print("Read input parameters from file:", filename)
     
     # integer parameters
@@ -66,7 +64,6 @@ def readInput(filename, iParam=[], rParam=[], lParam=[], sParam=[], aParam=[], d
         except KeyError: pass
         
     # string parameters
-    print(sParam)
     for sp in sParam:
         try:
             txt = str(config[name][sp])
