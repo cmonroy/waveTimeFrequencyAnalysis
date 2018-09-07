@@ -59,7 +59,6 @@ def bvWriter(filename,  xAxis, data , labels=[], units=[], comment='', compressi
     """
         Write a TS file in BV format
     """
-    from droppy.misc import print_options
 
     rt = '\n'
     try:

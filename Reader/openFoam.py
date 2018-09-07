@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 
@@ -75,12 +76,11 @@ def OpenFoamReadForce(filename, field = "total"):
                    "Fx-Porous" , "Fy-Porous" , "Fz-Porous",
                    "Mx-Pressure" , "My-Pressure" , "Mz-Pressure",
                    "Mx-Viscous" , "My-Viscous" , "Mz-Viscous",
-                   "Mx-Porous" , "My-Porous" , "Mz-Porous",
-                   ]
-
+                   "Mx-Porous" , "My-Porous" , "Mz-Porous", ]
    else :
       dataArray = parsedArray
-      labels = [ "Unknown{}".format(j) for j in range(ns)  ]
+      if field != "total": labels = [ "Unknown{}".format(j) for j in range(ns) 
+      ]
    return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
 def OpenFoamReadMotion( filename , namesLine = 1 ) :
@@ -93,6 +93,33 @@ def OpenFoamReadMotion( filename , namesLine = 1 ) :
       header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
    df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
    return df
+
+def OpenFoamWriteForce(df, filename) :
+   """
+   Write force in foamStar format
+   """
+   
+   ns = df.shape[1]
+   
+   if not (ns in [6,12,18]):
+       print('ERROR: forces datafame should contain 6, 12 or 18 components!')  
+       os._exit(1)
+   
+   with open(filename, "w") as f:
+       f.write('# Forces\n')
+       f.write('# CofR                : ({:21.15e} {:21.15e} {:21.15e})\n'.format(0,0,0))
+       if ns==6:  f.write('# Time                forces(pressure) moment(pressure)\n')
+       elif ns==12: f.write('# Time                forces(pressure viscous) moment(pressure viscous)\n')
+       elif ns==18: f.write('# Time                forces(pressure viscous porous) moment(pressure viscous porous)\n')
+      
+       for index, row in df.iterrows():
+           if ns==6:
+               f.write('{:21.15e}\t(({:21.15e} {:21.15e} {:21.15e})) (({:21.15e} {:21.15e} {:21.15e}))\n'.format(index,*row))
+           elif ns==12:
+               f.write('{:21.15e}\t(({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e})) (({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e}))\n'.format(index,*row))
+           elif ns==18:
+               f.write('{:21.15e}\t(({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e})) (({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e}))\n'.format(index,*row))
+           
 
 
 
