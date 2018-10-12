@@ -217,20 +217,28 @@ def derivFFT(df, n=1):
 
     return pd.DataFrame(data=np.transpose(deriv), index=df.index, columns=["DerivFFT(" + x + ")" for x in df.columns])
 
-
-def deriv(se, n=1, way="upwind"):
+def deriv(df, n=1):
     """ Deriv a signal through finite difference
     """
     # Handle series or DataFrame
-
-    data = np.empty(se.shape)
-
+    if type(df)==pd.core.frame.DataFrame:
+        deriv = pd.DataFrame(index=df.index, columns=df.columns)
+    elif type(df)==pd.core.series.Series:
+        deriv = pd.Series(index=df.index)
+    else:
+        raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
+        
+    #compute first derivative
     if n == 1:
-        if way == "upwind":
-            data[:-1] = (se.values[1:] - se.values[:-1]) / (se.index[1:] - se.index[:-1])
-            # Downwind for last value
-            data[-1] = (se.values[-1] - se.values[-2]) / (se.index[-1] - se.index[-2])
-    return pd.Series(data=data, index=se.index)
+        if type(df)==pd.core.frame.DataFrame:
+            for col in df.columns:
+                deriv.loc[:,col] = np.gradient(df[col],df.index)
+        elif type(df)==pd.core.series.Series:
+            deriv[:] = np.gradient(df,df.index)
+    else:
+        raise(Exception('ERROR: 2nd derivative not implemented yet'))
+            
+    return deriv
 
 
 def testDeriv(display):
