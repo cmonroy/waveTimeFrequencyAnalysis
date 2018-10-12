@@ -34,9 +34,8 @@ def OpenFoamReadForce(filename, field = "total"):
    """
    Read openFoam "forces" file
    """ 
-   fil = open(filename, "r")
-   data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
-   fil.close()
+   with open(filename, "r") as fil:
+       data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
    xAxis = np.array(  [float(l[0]) for l in data] )
    nx = len(xAxis)
    ns = len(data[0]) -1
@@ -84,15 +83,32 @@ def OpenFoamReadForce(filename, field = "total"):
    return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
 def OpenFoamReadMotion( filename , namesLine = 1 ) :
-   """
-   Read motion and internal loads from foamStar
-   """
+    """
+    Read motion and internal loads from foamStar
+    """
 
-   #Read header
-   with open(filename, "r") as fil :
+    #Read header
+    with open(filename, "r") as fil:
       header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
-   df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
-   return df
+    df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
+    return df
+
+def OpenFoamReadDisp( filename ) :
+    """
+    Read displacement signal from foamStar
+    """
+   
+    with open(filename, "r") as fil :
+        data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
+    data = np.array(list(filter(None,data)))
+    data = data.astype(np.float)
+
+    labels = ["Dx" , "Dy" , "Dz" , "Rx" , "Ry" , "Rz"]
+
+    xAxis = data[:,0]
+    dataArray = data[:,1:]
+    
+    return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
 def OpenFoamWriteForce(df, filename) :
    """
