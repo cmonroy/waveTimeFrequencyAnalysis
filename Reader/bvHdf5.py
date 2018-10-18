@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import h5py
 
-def bvReader_h5(filename, dataset = "Data", headerOnly = False ) :
+def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None) :
     """ Read BV format
     """
 
@@ -17,7 +17,12 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False ) :
         else :
             time = ds.dims[0][0].value
             data = ds.value
-    return time, data, label
+            
+    if usecols is not None:
+        useidx = [list(label).index(col) for col in usecols]
+        return time, data[:,useidx], label[useidx]
+    else:
+        return time, data, label
 
 
 def bvWriter_h5(filename, xAxis , data, labels, datasetName = "Data", compression = None, chunks = None, dtype = "float" ):
