@@ -7,7 +7,7 @@
 
 from __future__ import absolute_import, print_function
 import numpy as np
-import scipy
+import xarray as xa
 import pandas as pd
 from scipy.interpolate import interp1d
 from math import pi, log
@@ -217,14 +217,16 @@ def derivFFT(df, n=1):
 
     return pd.DataFrame(data=np.transpose(deriv), index=df.index, columns=["DerivFFT(" + x + ")" for x in df.columns])
 
-def deriv(df, n=1):
+def deriv(df, n=1, axis=None):
     """ Deriv a signal through finite difference
     """
-    # Handle series or DataFrame
+    # Handle series, DataFrame or DataArray
     if type(df)==pd.core.frame.DataFrame:
         deriv = pd.DataFrame(index=df.index, columns=df.columns)
     elif type(df)==pd.core.series.Series:
         deriv = pd.Series(index=df.index)
+    elif type(df)==xa.core.dataarray.DataArray:
+        deriv = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
     else:
         raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
         
@@ -235,6 +237,9 @@ def deriv(df, n=1):
                 deriv.loc[:,col] = np.gradient(df[col],df.index)
         elif type(df)==pd.core.series.Series:
             deriv[:] = np.gradient(df,df.index)
+        elif type(df)==xa.core.dataarray.DataArray:
+            if axis==None: raise(Exception('ERROR: axis should be specifed if using DataArray'))
+            deriv.data = np.gradient(df,df.coords[df.dims[axis]].values,axis=axis)
     else:
         raise(Exception('ERROR: 2nd derivative not implemented yet'))
             
