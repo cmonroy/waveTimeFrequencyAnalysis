@@ -44,14 +44,14 @@ def fillCos(A=1.0, T=10., tMin=0., tMax=50., n=200):
     return pd.DataFrame(data=data, index=xAxis, columns=["Cos", "Sin"])
 
 
-def reSample(df, dt=None, xAxis=None, n=None, kind='linear'):
+def reSample(df, dt=None, xAxis=None, n=None, kind='linear', extrapolate=False,extrap_value=0.0):
     """re-sample the signal
     """
 
     if type(df) == pd.Series:
         df = pd.DataFrame(df)
 
-    f = interp1d(df.index, np.transpose(df.values), kind=kind, axis=-1, copy=True, bounds_error=True, assume_sorted=True)
+    f = interp1d(df.index, np.transpose(df.values), kind=kind, axis=-1, copy=True, bounds_error=(not extrapolate), fill_value=extrap_value, assume_sorted=True)
     if dt:
         end = int(+(df.index[-1] - df.index[0]) / dt) * dt + df.index[0]
         xAxis = np.linspace(df.index[0], end, 1 + int(+(end - df.index[0]) / dt))
