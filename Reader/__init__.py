@@ -37,7 +37,7 @@ def dfRead( filename , reader = "auto", **kwargs  ) :
         """
         Choose reader based on extension
         """
-        if os.path.splitext(filename)[-1] == ".ts" : reader = "bvReader"
+        if os.path.splitext(filename)[-1] in [".ts" , ".dat"] : reader = "bvReader"
         elif os.path.splitext(filename)[-1] == ".h5" : reader = "bvReader_h5"
         elif filename[-6:] == ".ts.gz" : reader = "bvReader"
         else : raise(Exception("Can not infer reader type for " + filename))

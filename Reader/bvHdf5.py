@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
 import h5py
+import os
 
 def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None) :
     """ Read BV format
     """
+
+    if not os.path.exists(filename) :
+        raise(OSError (2 ,'No such file or directory', filename ))
 
     with h5py.File(filename, "r") as f:
         ds = f.get(dataset)
@@ -17,7 +21,7 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None) :
         else :
             time = ds.dims[0][0].value
             data = ds.value
-            
+
     if usecols is not None:
         useidx = [list(label).index(col) for col in usecols]
         return time, data[:,useidx], label[useidx]
