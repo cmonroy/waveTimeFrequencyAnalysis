@@ -3,7 +3,6 @@ import numpy as np
 from scipy.signal import argrelextrema
 from matplotlib import pyplot as plt
 from math import pi, log
-from oneDof import OneDof
 import pandas as pd
 
 
@@ -101,16 +100,16 @@ class DecayAnalysis(object):
         return self.coef
 
 
-    def plotRegression(self, ax = None):
+    def plotRegression(self, ax = None, label = ""):
         # Plot the regression
         if ax is None:
             fig, ax = plt.subplots()
 
         self._regression()
-        ax.plot( np.rad2deg(self.n[0, :]), self.n[1, :], 'o',  label="Exp")
+        ax.plot( np.rad2deg(self.n[0, :]), self.n[1, :], 'o',  label="Exp{}".format(label))
         xi = np.linspace(np.min(self.n[0, :]), np.max(self.n[0, :]), 3)
         line = self.coef[0]*xi + self.coef[1]  # regression line
-        ax.plot( np.rad2deg(xi) , line, 'r-', label='Regression')
+        ax.plot( np.rad2deg(xi) , line, 'r-', label='Regression{}'.format(label))
         ax.legend()
         ax.set_title("Decay regression, method = {}".format(self.method))
         ax.set_xlabel("Amplitude (deg)")
@@ -132,7 +131,9 @@ class DecayAnalysis(object):
         return blin, bquad
 
 
+
 def test():
+    from droppy.TimeDomain.oneDof import OneDof
     m = 15
     bl = 1.5
     bq = 2.0
