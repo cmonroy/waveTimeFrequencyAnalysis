@@ -97,8 +97,8 @@ def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
    else :
        ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label = "Cycle bounds" )
    ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
-   ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "max", color ="r")
-   ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "min", color ="b")
+   ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "Min", color ="r")
+   ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "Max", color ="b")
    ax.legend(loc = 2)
    return ax
 
