@@ -1,14 +1,6 @@
 from __future__ import absolute_import
-from . import pyplotTools , dfPlot , surfacePlot
-dfSlider = dfPlot.dfSlider
-dfAnimate = dfPlot.dfAnimate
-dfSurface = dfPlot.dfSurface
-dfIsoContour = dfPlot.dfIsoContour
-newColorIterator = pyplotTools.newColorIterator
-markerCycle =pyplotTools.markerCycle
-newMarkerIterator = pyplotTools.newMarkerIterator
-linestyleCycle = pyplotTools.linestyleCycle
-newLinestyleIterator = pyplotTools.newLinestyleIterator
-pyplotLegend = pyplotTools.pyplotLegend
-autoscale_y =pyplotTools.autoscale_y
-mapFunction = surfacePlot.mapFunction
+from .dfPlot import dfSlider, dfAnimate, dfSurface, dfIsoContour
+from .pyplotTools import newColorIterator, markerCycle, newMarkerIterator, linestyleCycle
+from .pyplotTools import newLinestyleIterator, pyplotLegend, autoscale_y
+from .surfacePlot import mapFunction
+from .scatterPlot import kde_scatter, density_scatter
