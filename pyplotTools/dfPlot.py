@@ -20,8 +20,79 @@ def centerToEdge(array):
         raise(ValueError())
 
 
+
+
+def compareSurfaceAndMarginals(  df1, df2, surfaceArgs, cumulative = True, name1 = None, name2 = None, kwargs_l1= {}, kwargs_l2 = {}):
+
+    fig, axList = plt.subplots( nrows = 2, ncols = 2 )
+
+    dfSurface(df1, ax = axList[1,0], **surfaceArgs)
+    axList[1,0].set_xlabel( axList[1,0].get_xlabel() +  "\n" + name1  )
+    dfSurface(df2, ax = axList[0,1], **surfaceArgs)
+    axList[0,1].set_xlabel( axList[0,1].get_xlabel() +  "\n" + name2  )
+
+
+    for df, name, kwargs in [ (df1, name1, kwargs_l1), (df2, name2, kwargs_l2)]:
+        if not cumulative :
+            axList[1,1].barh( df.index, df.sum(axis=1), alpha = 0.5 , label = name)
+            axList[0,0].bar( df.columns, df.sum(axis=0), alpha = 0.5, label = name )
+        else:
+            hsCum = np.add.accumulate( df.sum(axis=1)[::-1] )[::-1]  # 1-np.add.accumulate( df.sum(axis=1) )
+            axList[1,1].plot(hsCum,  hsCum.index, label = name, **kwargs )
+            axList[1,1].set_xscale("log")
+            tzCum = np.add.accumulate( df.sum(axis=0)[::-1] )[::-1]  # 1-np.add.accumulate( df.sum(axis=0) )
+            axList[0,0].plot(tzCum.index, tzCum, "o", label = name, **kwargs )
+            axList[0,0].set_yscale("log")
+
+    axList[0,0].legend()
+    ymin = min( df1.index.min() , df2.index.min())
+    ymax = max( df1.index.max() , df2.index.max())
+
+    axList[1,1].set_ylim([ymin, ymax])
+    axList[1,0].set_ylim([ymin, ymax])
+
+    xmin = min( df1.columns.min() , df2.columns.min())
+    xmax = max( df1.columns.max() , df2.columns.max())
+
+    axList[0,0].set_xlim([xmin, xmax])
+    axList[0,1].set_xlim([xmin, xmax])
+
+    axList[0,0].set_ylabel( "Exceedance rate " + df.columns.name )
+    axList[1,1].set_xlabel( "Exceedance rate " + df.index.name )
+    plt.tight_layout()
+    return fig
+
+def dfSurfaceAndMarginals( df, surfaceArgs, cumulative = True ):
+    fig, axList = plt.subplots( nrows = 2, ncols = 2 )
+
+    dfSurface(df, ax = axList[1,0], **surfaceArgs)
+    if not cumulative :
+        axList[1,1].barh( df.index, df.sum(axis=1), alpha = 0.5 )
+        axList[0,0].bar( df.columns, df.sum(axis=0), alpha = 0.5 )
+    else:
+        hsCum = 1-np.add.accumulate( df.sum(axis=1) )
+        axList[1,1].plot(hsCum,  hsCum.index, "o" )
+        axList[1,1].set_xscale("log")
+        tzCum = 1-np.add.accumulate( df.sum(axis=0) )
+        axList[0,0].plot(tzCum.index, tzCum, "o" )
+        axList[0,0].set_yscale("log")
+
+    axList[1,1].set_ylim([df.index.min(), df.index.max()])
+    axList[1,0].set_ylim([df.index.min(), df.index.max()])
+
+    axList[0,0].set_ylabel( "Exceedance rate " + df.columns.name )
+    axList[1,1].set_ylabel( "Exceedance rate " + df.index.name )
+
+    axList[0,0].set_xlim([df.columns.min(), df.columns.max()])
+    axList[0,1].set_xlim([df.columns.min(), df.columns.max()])
+
+    axList[0,1].axis("off")
+    plt.tight_layout()
+    return fig
+
+
 def dfSurface(df, labels=None, ax=None, nbColors=200, interpolate=True,
-              polar=False, polarConvention="seakeeping", colorbar=False, **kwargs):
+              polar=False, polarConvention="seakeeping", colorbar=False, scale = None, **kwargs):
     """Surface plot from dataframe
            index : y or theta
            columns : x or theta
@@ -42,12 +113,17 @@ def dfSurface(df, labels=None, ax=None, nbColors=200, interpolate=True,
                 ax.set_theta_zero_location("N")
                 ax.set_theta_direction(1)
 
+    if scale is not None:
+        val = scale(df.values)
+    else :
+        val = df.values
+
     if interpolate:
-        cax = ax.contourf(df.columns.astype(float), df.index, df.values, nbColors, **kwargs)
+        cax = ax.contourf(df.columns.astype(float), df.index, val, nbColors, **kwargs)
     else:
         try:
-            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), df.values, **kwargs)
-        except:
+            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, **kwargs)
+        except ValueError:
             raise(Exception("Index is not evenly spaced, try with interpolate = True"))
 
     # Add x and y label if contains in the dataFrame
@@ -94,7 +170,7 @@ def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=
     return ax
 
 
-def dfSlider(dfList, labels=None, ax=None, display=True):
+def dfSlider(dfList, labels=None, ax=None, display=True, **kwargs):
     """ Interactive 2D plots, with slider to select the frame to display
 
     Column is used as x axis
@@ -131,7 +207,7 @@ def dfSlider(dfList, labels=None, ax=None, display=True):
 
     lList = []
     for idf, df in enumerate(dfList):
-        l, = ax.plot(df.columns, df.iloc[a0, :], lw=2, label=labels[idf])
+        l, = ax.plot(df.columns, df.iloc[a0, :], lw=2, label=labels[idf], **kwargs)
         lList.append(l)
 
     ax.legend(loc=2)
@@ -184,7 +260,7 @@ def dfSlider(dfList, labels=None, ax=None, display=True):
     return ax
 
 
-def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, ylim=None, xlabel="x(m)", ylabel="Elevation(m)", codec="libx264"):
+def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, ylim=None, xlabel="x(m)", ylabel="Elevation(m)", codec="libx264", **kwargs):
     """
        Animate a dataFrame where time is the index, and columns are the "spatial" position
     """
@@ -210,10 +286,10 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
             color = "black"
         else:
             color = "blue"
-        ltemp,  = ax.plot([], [], lw=1, alpha=1-i*1./nShaddow, color=color)
+        ltemp,  = ax.plot([], [], lw=1, alpha=1-i*1./nShaddow, color=color, **kwargs)
         ls.append(ltemp)
 
-    xVal = df.columns
+    xVal = df.columns.astype(float)
 
     ax.grid(True)
 
@@ -231,7 +307,7 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
     ax.set_ylabel(ylabel)
 
     def run(itime):
-        ax.set_title("{}s".format(df.index[itime*rate]))
+        ax.set_title("{:.1f}s".format(df.index[itime*rate]))
         for s in range(nShaddow):
             if not pause:
                 if itime > s:
@@ -248,7 +324,7 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
 
 
 def testSlider():
-    from Spectral import Wif
+    from Pluto.Spectral import Wif
     wif = Wif.Jonswap(Hs=2.0, Tp=10.0, Gamma=1.0, Heading=180.)
     #wif = Wif( r"D:\Etudes\HOS\edw\my_10_rcw.wif" )
     #wif.position( -400. , 0. )
@@ -271,5 +347,5 @@ def testSurfacePlot():
 if __name__ == "__main__":
 
     print("Test")
-    testSurfacePlot()
-    # testSlider()
+#    testSurfacePlot()
+    testSlider()
