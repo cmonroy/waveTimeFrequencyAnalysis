@@ -229,7 +229,7 @@ def deriv(df, n=1, axis=None):
         deriv = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
     else:
         raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
-        
+
     #compute first derivative
     if n == 1:
         if type(df)==pd.core.frame.DataFrame:
@@ -242,7 +242,7 @@ def deriv(df, n=1, axis=None):
             deriv.data = np.gradient(df,df.coords[df.dims[axis]].values,axis=axis)
     else:
         raise(Exception('ERROR: 2nd derivative not implemented yet'))
-            
+
     return deriv
 
 
@@ -373,6 +373,16 @@ def testBandPass(display=True):
 def getRMS(df):
     rms = np.sqrt(df.mean()**2 + df.std()**2)
     return rms
+
+
+def getAutoCorrelation( se ):
+    """To check
+    """
+    x = se.values
+    xp = x - x.mean()
+    result = np.correlate(xp, xp, mode='full')
+    result = result[result.size // 2:]
+    return pd.Series( index = np.arange( se.index[0]-se.index[0], len(result)*dx(se) ,  dx(se) ) , data = result / np.var(x) / len(x) )
 
 
 if __name__ == '__main__':

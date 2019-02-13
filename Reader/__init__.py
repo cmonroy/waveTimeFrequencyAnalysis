@@ -1,15 +1,11 @@
 from __future__ import absolute_import
 import os
-from . import tecplot , bvFormat , openFoam , arianeReader, simpleReader, bvHdf5
-bvReader = bvFormat.bvReader
-bvWriter = bvFormat.bvWriter
-tecplot_HOS = tecplot.tecplot_HOS
-openFoamReader = openFoam.openFoamReader
-ariane8Reader = arianeReader.ariane8Reader
-ariane702Reader = arianeReader.ariane702Reader
-simpleReader  = simpleReader.simpleReader
-bvReader_h5 = bvHdf5.bvReader_h5
-bvWriter_h5 = bvHdf5.bvWriter_h5
+from .bvFormat import bvReader, bvWriter
+from .tecplot import tecplot_HOS
+from .openFoam import openFoamReader, OpenFoamReadMotion
+from .arianeReader import ariane8Reader, ariane702Reader
+from .bvHdf5 import bvReader_h5, bvWriter_h5
+from .simpleReader import simpleReader
 
 
 #Reader dictionary => possible to pass reader as string
@@ -22,10 +18,12 @@ dicoReader = {
               "bvReader_h5" : bvReader_h5 ,
               }
 
+
 dicoWriter = {
              "bvWriter" : bvWriter ,
              "bvWriter_h5" : bvWriter_h5 ,
              }
+
 
 def dfRead( filename , reader = "auto", **kwargs  ) :
     """

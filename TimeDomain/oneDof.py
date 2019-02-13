@@ -9,7 +9,7 @@ class OneDof(object):
     M d2x/dt2 + Bl dx/dt + Bq (dx/dt)*|(dx/dt)| + K x = F
     """
 
-    def __init__(self , m , bl , bq , k ):
+    def __init__(self , m,  k , bl , bq ):
         self.m = m
         self.bl = bl
         self.bq = bq
