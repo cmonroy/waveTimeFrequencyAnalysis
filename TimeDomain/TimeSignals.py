@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import, print_function
 import numpy as np
-import xarray as xa
 import pandas as pd
 from scipy.interpolate import interp1d
 from math import pi, log
@@ -198,6 +197,7 @@ def derivFFT(df, n=1):
     indexList : channel to derive
     n : order of derivation
     """
+    import xarray as xa
     deriv = []
     for iSig in range(df.shape[1]):
         fft = np.fft.fft(df.values[:, iSig])  # FFT
