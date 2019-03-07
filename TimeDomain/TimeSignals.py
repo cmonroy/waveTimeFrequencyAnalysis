@@ -134,6 +134,55 @@ def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit
     return pd.DataFrame(data=np.transpose(data), index=xAxis, columns=["psd(" + str(x) + ")" for x in df.columns])
 
 
+def getCSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
+    """
+       Compute the power spectral density
+    """
+    from scipy.signal import csd
+
+    nfft = int((2 * pi / dw) / dx(df))
+    nperseg = 2**int(log(nfft) / log(2))
+    noverlap = nperseg * roverlap
+
+    """ Return the PSD of a time signal """
+    data = []
+    for iSig in range(df.shape[1]):
+        test = csd(df.values[:, 0], df.values[:, 1], fs=1. / dx(df), window=window, nperseg=nperseg, noverlap=noverlap, nfft=nfft, detrend=detrend, return_onesided=True, scaling='density')
+        data.append(test[1] / (2 * pi))
+    if unit in ["Hz", "hz"]:
+        xAxis = test[0][:]
+    else:
+        xAxis = test[0][:] * 2 * pi
+    return pd.DataFrame(data=np.transpose(data), index=xAxis, columns=["csd1", "csd2"])
+
+
+
+def getRAO( df, cols=None, *args, **kwargs ):
+    """Return RAO from wave elevation and response signal
+
+    Use Welch method to return RAO (amplitudes and phases)
+
+       df = dataframe containing wave elevation and response
+       cols (tuple) : indicate labels of elevation and response
+       *args, **kwargs : passed to getPSD method
+    """
+
+    if cols is None :
+        df_ = df.iloc[ :, [0,1] ]
+    else :
+        df_ = df.loc[ :, cols ]
+
+    #Power Spectral Density
+    psd = getPSD( df_, *args, **kwargs )
+
+    #Cross Spectral Density
+    csd = getCSD( df_, *args, **kwargs )
+
+    return pd.DataFrame( index = psd.index, data = { "amp" : (psd.iloc[:,1] / psd.iloc[:,0])**0.5 ,
+                                                     "phase" : np.angle(csd.iloc[:,0]) } )
+
+
+
 def fftDf(df, part=None, index="Hz"):
     # Handle series or DataFrame
     if type(df) == pd.Series:
