@@ -109,6 +109,17 @@ def OpenFoamReadDisp( filename ) :
     dataArray = data[:,1:]
     
     return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
+    
+def OpenFoamWriteDisp(df, filename) :
+    """
+    Write displacement signal for foamStar
+    """
+   
+    with open(filename, "w") as f :
+        f.write('(\n')
+        for index, row in df.iterrows():
+            f.write('({:21.15e}  (({:21.15e} {:21.15e} {:21.15e}) ({:21.15e} {:21.15e} {:21.15e})) )\n'.format(index,*row))
+        f.write(')')
 
 def OpenFoamWriteForce(df, filename) :
    """
@@ -116,7 +127,6 @@ def OpenFoamWriteForce(df, filename) :
    """
    
    ns = df.shape[1]
-   
    if not (ns in [6,12,18]):
        print('ERROR: forces datafame should contain 6, 12 or 18 components!')  
        os._exit(1)
