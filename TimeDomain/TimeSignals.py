@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import xarray as xa
 import pandas as pd
+from scipy import integrate
 from scipy.interpolate import interp1d
 from math import pi, log
 from matplotlib import pyplot as plt
@@ -244,6 +245,36 @@ def deriv(df, n=1, axis=None):
         raise(Exception('ERROR: 2nd derivative not implemented yet'))
             
     return deriv
+
+def integ(df, n=1, axis=None, origin=None):
+    """ Integrate a signal with trapeze method
+    """
+    # Handle series, DataFrame or DataArray
+    if type(df)==pd.core.frame.DataFrame:
+        integ = pd.DataFrame(index=df.index, columns=df.columns)
+        if origin==None: origin=[0.]*df.shape[1]
+    elif type(df)==pd.core.series.Series:
+        integ = pd.Series(index=df.index)
+        if origin==None: origin=0.
+    elif type(df)==xa.core.dataarray.DataArray:
+        integ = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
+    else:
+        raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
+        
+    #compute first integral
+    if n == 1:
+        if type(df)==pd.core.frame.DataFrame:
+            for i, col in enumerate(df.columns):
+                integ.loc[:,col] = integrate.cumtrapz(df[col], df.index, initial=0) + origin[i]
+        elif type(df)==pd.core.series.Series:
+            integ[:] = integrate.cumtrapz(df, df.index, initial=0) + origin
+        elif type(df)==xa.core.dataarray.DataArray:
+            if axis==None: raise(Exception('ERROR: axis should be specifed if using DataArray'))
+            integ.data = integrate.cumtrapz(df, df.coords[df.dims[axis]].values,axis=axis, initial=0)
+    else:
+        raise(Exception('ERROR: 2nd integral not implemented yet'))
+            
+    return integ
 
 
 def testDeriv(display):
