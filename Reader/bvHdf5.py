@@ -12,15 +12,15 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None) :
 
     with h5py.File(filename, "r") as f:
         ds = f.get(dataset)
-        label = ds.dims[1][0].value
+        label = ds.dims[1][0][()]
         if label.dtype not in [int, float]  :
             label = label.astype(str)
         if headerOnly :
             time = []
             data = []
         else :
-            time = ds.dims[0][0].value
-            data = ds.value
+            time = ds.dims[0][0][()]
+            data = ds[()] 
 
     if usecols is not None:
         useidx = [list(label).index(col) for col in usecols]
