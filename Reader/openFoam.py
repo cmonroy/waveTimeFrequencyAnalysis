@@ -26,14 +26,14 @@ def openFoamReader(filename, *args , **kwargs) :
                  "mCstr.dat" : OpenFoamReadForce,
                  "acc.dat" : OpenFoamReadForce
                  }
-    fname = os.path.basename(filename) 
+    fname = os.path.basename(filename)
     return dicoReader.get(fname , OpenFoamReadMotion ) ( filename , *args , **kwargs )
     # .get(fname, OpenFoamReadMotion) means that the method OpenFoamReadMotion is used by default (if filename is not in dicoReader)
 
 def OpenFoamReadForce(filename, field = "total"):
    """
    Read openFoam "forces" file
-   """ 
+   """
    with open(filename, "r") as fil:
        data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
    xAxis = np.array(  [float(l[0]) for l in data] )
@@ -78,7 +78,7 @@ def OpenFoamReadForce(filename, field = "total"):
                    "Mx-Porous" , "My-Porous" , "Mz-Porous", ]
    else :
       dataArray = parsedArray
-      if field != "total": labels = [ "Unknown{}".format(j) for j in range(ns) 
+      if field != "total": labels = [ "Unknown{}".format(j) for j in range(ns)
       ]
    return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
 
@@ -89,7 +89,7 @@ def OpenFoamReadMotion( filename , namesLine = 1 ) :
 
     #Read header
     with open(filename, "r") as fil:
-      header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
+        header = [ l.strip().split() for l in [ fil.readline() for line in range(namesLine+1) ]  if l.startswith("#") ]
     df = pd.read_csv( filename , comment = "#" , header = None ,  delim_whitespace=True, dtype = float , index_col = 0 , names = header[namesLine][2:])
     return df
 
@@ -97,7 +97,7 @@ def OpenFoamReadDisp( filename ) :
     """
     Read displacement signal from foamStar
     """
-   
+
     with open(filename, "r") as fil :
         data = [ l.strip().strip().replace("(", " ").replace(")", " ").split() for l in fil.readlines() if not l.startswith("#") ]
     data = np.array(list(filter(None,data)))
@@ -107,7 +107,7 @@ def OpenFoamReadDisp( filename ) :
 
     xAxis = data[:,0]
     dataArray = data[:,1:]
-    
+
     return  pd.DataFrame(index=xAxis , data=dataArray , columns=labels)
     
 def OpenFoamWriteDisp(df, filename) :
@@ -125,8 +125,9 @@ def OpenFoamWriteForce(df, filename) :
    """
    Write force in foamStar format
    """
-   
+
    ns = df.shape[1]
+   
    if not (ns in [6,12,18]):
        print('ERROR: forces datafame should contain 6, 12 or 18 components!')  
        os._exit(1)
