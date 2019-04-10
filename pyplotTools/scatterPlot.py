@@ -37,21 +37,23 @@ def kde_scatter( x , y, ax = None, sort = True , lib_kde = "scipy", **kwargs )  
 
 
 
-def density_scatter( x , y, ax = None, sort = True, bins = 20, **kwargs )   :
+def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, interpolation = "linear", **kwargs )   :
     """
     Scatter plot colored by 2d histogram
     """
     if ax is None :
         fig , ax = plt.subplots()
     data , x_e, y_e = np.histogram2d( x, y, bins = bins)
-    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = "splinef2d", bounds_error = False )
+    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = interpolation, bounds_error = False, fill_value = np.nan )
+    if scale is not None :
+        z = scale(z)
 
     # Sort the points by density, so that the densest points are plotted last
     if sort :
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
 
-    ax.scatter( x, y, c=z, **kwargs )
+    ax.scatter( x, y, c=z, edgecolor = "", **kwargs )
     return ax
 
 
