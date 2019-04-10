@@ -10,7 +10,7 @@ import numpy as np
 import xarray as xa
 import pandas as pd
 from scipy import integrate
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, UnivariateSpline
 from math import pi, log
 from matplotlib import pyplot as plt
 from .. import pyplotTools
@@ -136,6 +136,55 @@ def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit
     return pd.DataFrame(data=np.transpose(data), index=xAxis, columns=["psd(" + str(x) + ")" for x in df.columns])
 
 
+def getCSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
+    """
+       Compute the power spectral density
+    """
+    from scipy.signal import csd
+
+    nfft = int((2 * pi / dw) / dx(df))
+    nperseg = 2**int(log(nfft) / log(2))
+    noverlap = nperseg * roverlap
+
+    """ Return the PSD of a time signal """
+    data = []
+    for iSig in range(df.shape[1]):
+        test = csd(df.values[:, 0], df.values[:, 1], fs=1. / dx(df), window=window, nperseg=nperseg, noverlap=noverlap, nfft=nfft, detrend=detrend, return_onesided=True, scaling='density')
+        data.append(test[1] / (2 * pi))
+    if unit in ["Hz", "hz"]:
+        xAxis = test[0][:]
+    else:
+        xAxis = test[0][:] * 2 * pi
+    return pd.DataFrame(data=np.transpose(data), index=xAxis, columns=["csd1", "csd2"])
+
+
+
+def getRAO( df, cols=None, *args, **kwargs ):
+    """Return RAO from wave elevation and response signal
+
+    Use Welch method to return RAO (amplitudes and phases)
+
+       df = dataframe containing wave elevation and response
+       cols (tuple) : indicate labels of elevation and response
+       *args, **kwargs : passed to getPSD method
+    """
+
+    if cols is None :
+        df_ = df.iloc[ :, [0,1] ]
+    else :
+        df_ = df.loc[ :, cols ]
+
+    #Power Spectral Density
+    psd = getPSD( df_, *args, **kwargs )
+
+    #Cross Spectral Density
+    csd = getCSD( df_, *args, **kwargs )
+
+    return pd.DataFrame( index = psd.index, data = { "amp" : (psd.iloc[:,1] / psd.iloc[:,0])**0.5 ,
+                                                     "phase" : np.angle(csd.iloc[:,0]) } )
+
+
+
 def fftDf(df, part=None, index="Hz"):
     # Handle series or DataFrame
     if type(df) == pd.Series:
@@ -230,7 +279,7 @@ def deriv(df, n=1, axis=None):
         deriv = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
     else:
         raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
-        
+
     #compute first derivative
     if n == 1:
         if type(df)==pd.core.frame.DataFrame:
@@ -243,7 +292,7 @@ def deriv(df, n=1, axis=None):
             deriv.data = np.gradient(df,df.coords[df.dims[axis]].values,axis=axis)
     else:
         raise(Exception('ERROR: 2nd derivative not implemented yet'))
-            
+
     return deriv
 
 def integ(df, n=1, axis=None, origin=None):
@@ -276,6 +325,35 @@ def integ(df, n=1, axis=None, origin=None):
             
     return integ
 
+def smooth(df, k=3, axis=None, inplace=False):
+    """ Smooth a signal using scipy.interpolate.UnivariateSpine of order k
+    """
+    # Handle series, DataFrame or DataArray
+    if type(df)==pd.core.frame.DataFrame:
+        smooth = pd.DataFrame(index=df.index, columns=df.columns)
+    elif type(df)==pd.core.series.Series:
+        smooth = pd.Series(index=df.index)
+    elif type(df)==xa.core.dataarray.DataArray:
+        smooth = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
+    else:
+        raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
+
+    #smooth using spline
+    if type(df)==pd.core.frame.DataFrame:
+        for col in df.columns:
+            spl = UnivariateSpline(df.index,df[col],k=k)
+            smooth.loc[:,col] = spl(df.index)
+    elif type(df)==pd.core.series.Series:
+        spl = UnivariateSpline(df.index,df.values,k=k)
+        smooth[:] = spl(df.index)
+    elif type(df)==xa.core.dataarray.DataArray:
+        raise(NotImplementedError)
+#        if axis==None: raise(Exception('ERROR: axis should be specifed if using DataArray'))
+#        deriv.data = np.gradient(df,df.coords[df.dims[axis]].values,axis=axis)
+    else:
+        raise(Exception('ERROR: 2nd derivative not implemented yet'))
+
+    return smooth
 
 def testDeriv(display):
     ts = read(r'../../testData/motion.dat')
@@ -404,6 +482,15 @@ def testBandPass(display=True):
 def getRMS(df):
     rms = np.sqrt(df.mean()**2 + df.std()**2)
     return rms
+
+def getAutoCorrelation( se ):
+    """To check
+    """
+    x = se.values
+    xp = x - x.mean()
+    result = np.correlate(xp, xp, mode='full')
+    result = result[result.size // 2:]
+    return pd.Series( index = np.arange( se.index[0]-se.index[0], len(result)*dx(se) ,  dx(se) ) , data = result / np.var(x) / len(x) )
 
 
 if __name__ == '__main__':
