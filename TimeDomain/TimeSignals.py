@@ -138,7 +138,7 @@ def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit
 
 def getCSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
     """
-       Compute the power spectral density
+       Compute the cross-spectral density
     """
     from scipy.signal import csd
 

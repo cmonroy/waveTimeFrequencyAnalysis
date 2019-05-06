@@ -8,7 +8,7 @@ import pandas as pd
 
 class DecayAnalysis(object):
 
-    def __init__(self, se, method="maxmoy"):
+    def __init__(self, se, method="maxmoy", w_filter = None  ):
 
         self.se = se
         # Read the mcnSolve test time serie
@@ -23,14 +23,27 @@ class DecayAnalysis(object):
         self.maxVal = None
         self.minVal = None
 
+        if w_filter is not None :
+            self._smooth( w_filter )
+
+
+    def _smooth(self, w_filter):
+        from droppy.TimeDomain import bandPass
+        self.se = bandPass( self.se, fmin=0, fmax = w_filter, unit ="rad/s" )
+        self.motion = self.se.values
+
     def _getExtrema(self):
         """
         Get local extrema. require a smooth signal.
         """
-        self.maxIndex = argrelextrema(self.motion, np.greater)[0]
-        self.maxVal = self.motion[self.maxIndex]
-        self.minIndex = argrelextrema(self.motion, np.less)[0]
-        self.minVal = self.motion[self.minIndex]
+        from droppy.TimeDomain import upCrossMinMax
+        upCross = upCrossMinMax( self.se )
+
+        self.maxTime = upCross.MaximumTime
+        self.maxVal = upCross.Maximum
+        self.minTime = upCross.MinimumTime
+        self.minVal = upCross.Minimum
+
 
     def getPeriod(self, n=5):
         # Calculate and return the period, based on extrema location
@@ -38,8 +51,8 @@ class DecayAnalysis(object):
             self._getExtrema()
         T = 0.
         for i in range(n):
-            T = T + self.time[self.maxIndex[i+1]] - self.time[self.maxIndex[i]]
-            T = T + self.time[self.minIndex[i+1]] - self.time[self.minIndex[i]]
+            T += self.maxTime[i+1] - self.maxTime[i]
+            T += self.minTime[i+1] - self.minTime[i]
         return T / (2*n)
 
     def plotTimeTrace(self, ax = None):
@@ -47,9 +60,9 @@ class DecayAnalysis(object):
         if ax is None :
             fig, ax = plt.subplots()
         ax.plot(self.time, self.motion, "-")
-        if self.maxIndex is not None:
-            ax.plot(self.time[self.maxIndex[:]], self.motion[self.maxIndex[:]], "o")
-            ax.plot(self.time[self.minIndex[:]], self.motion[self.minIndex[:]], "o")
+        if self.maxTime is not None:
+            ax.plot(self.maxTime[:], self.maxVal[:], "o")
+            ax.plot(self.minTime[:], self.minVal[:], "o")
         return ax
 
     def _regression(self):
@@ -78,7 +91,7 @@ class DecayAnalysis(object):
                 self.n[1, i] = delta / (4*pi**2 + delta**2)**0.5
 
         elif self.method == "maxmoy":  # Max to get the decreement, min to get the amplitude
-            if self.minIndex[0] < self.maxIndex[1]:  # Start from x > 0
+            if self.minTime[0] < self.maxTime[1]:  # Start from x > 0
                 self.n = np.zeros((2, len(self.maxVal)-1))
                 for i in range(len(self.n[0, :])):
                     self.n[0, i] = -(self.minVal[i+1])
@@ -106,13 +119,16 @@ class DecayAnalysis(object):
             fig, ax = plt.subplots()
 
         self._regression()
-        ax.plot( np.rad2deg(self.n[0, :]), self.n[1, :], 'o',  label="Exp{}".format(label))
+        ax.plot( self.n[0, :], self.n[1, :], 'o',  label="Exp{}".format(label))
         xi = np.linspace(np.min(self.n[0, :]), np.max(self.n[0, :]), 3)
         line = self.coef[0]*xi + self.coef[1]  # regression line
-        ax.plot( np.rad2deg(xi) , line, 'r-', label='Regression{}'.format(label))
+        ax.plot( xi , line, 'r-', label='Regression{}'.format(label))
         ax.legend()
         ax.set_title("Decay regression, method = {}".format(self.method))
-        ax.set_xlabel("Amplitude (deg)")
+        ax.set_xlabel("Amplitude")
+        ax.set_ylabel("Equivalent damping (% of critical)")
+        ax.text( 0.55, 0.25,  "y = {:.2e} * x + {:.2e}".format( self.coef[0] , self.coef[1]) , transform=ax.transAxes  )
+
         return ax
 
     def getDimDampingCoef(self, T0, k, *args , **kwargs):
