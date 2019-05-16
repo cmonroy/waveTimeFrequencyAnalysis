@@ -12,6 +12,7 @@ from matplotlib.colors import Normalize
 
 import numpy as np
 import pandas as pd
+import xarray as xa
 
 
 def centerToEdge(array):
@@ -94,17 +95,42 @@ def dfSurfaceAndMarginals( df, surfaceArgs, cumulative = True ):
     return fig
 
 
-def dfSurface(df, labels=None, ax=None, nbColors=200, interpolate=True,
+def dfSurface(df, ax=None, nbColors=200, interpolate=True,
               polar=False, polarConvention="seakeeping", colorbar=False, scale = None, vmin = None, vmax = None, **kwargs):
-    """Surface plot from dataframe
-           index : y or theta
-           columns : x or theta
-           data = data
+    """Surface plot from pandas.DataFrame
+    
+    Parameters
+    ----------
+    df: pandas.DataFrame or xarray.DataArray
+    
+        Dataframe formmated as follow:
+        * columns : x or theta values
+        * index : y or r values
+        * data = data
+        
+        DataArray of dimension 2 formmated as follow:
+        * data = data
+        * dims : x and y values
 
-       if interpolate is True, data are considered as node value and interpolated in between
-       if interpolate is False, data are considered as center cell value  => similar to sns.heatmap
+    ax: matplotlib.axes._subplots.AxesSubplot
+        Specify existing axis to plot
+        
+    nbColors: int, default 200
+        Number of colorscale levels
+        
+    interpolate: bool, default True
+        * if True, data are considered as node value and interpolated in between
+        * if False, data are considered as center cell value  => similar to sns.heatmap
+        
+    colorbar: bool, default False
+        Specify is colobar should be plotted
+        
+    **kwargs:
+        Arguments applied to matplotlib.axes.Axes.contourf
     """
-
+    
+    if type(df)==xa.DataArray: raise NotImplementedError
+        
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, polar=polar)
@@ -115,15 +141,17 @@ def dfSurface(df, labels=None, ax=None, nbColors=200, interpolate=True,
             elif polarConvention == "geo":
                 ax.set_theta_zero_location("N")
                 ax.set_theta_direction(1)
-
+            
+            if df.columns.astype(float).max()>2*np.pi:
+                df.columns = [np.deg2rad(i) for i in df.columns.astype(float)]
+                
     if scale is not None:
         val = scale(df.values)
     else :
         val = df.values
 
-
     if interpolate:
-        cax = ax.contourf(df.columns.astype(float), df.index, val, nbColors, vmin=vmin, vmax=vmax, **kwargs)
+        cax = ax.contourf(df.columns.astype(float), df.index, val, levels=nbColors, vmin=vmin, vmax=vmax, **kwargs)
     else:
         try:
             cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, vmin=vmin, vmax=vmax, **kwargs)
@@ -144,11 +172,24 @@ def dfSurface(df, labels=None, ax=None, nbColors=200, interpolate=True,
     return ax
 
 
-def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=True, **kwargs):
-    """Iso contour plot from dataframe
-           index : y or theta
-           columns : x or theta
-           data = data
+def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=True, clabels=None, **kwargs):
+    """Iso contour plot from pandas.DataFrame
+    
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe formmated as follow:
+            
+        * index : y or theta values
+        * columns : x or theta values
+        * data = data
+        
+    ax: matplotlib.axes._subplots.AxesSubplot
+        Specify existing axis to plot
+        
+    clabels: list
+        Custom contour labels
+
     """
     if ax is None:
         fig = plt.figure()
@@ -164,9 +205,15 @@ def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=
     cax = ax.contour(df.columns.astype(float), df.index, df.values, **kwargs)
 
     if inline:
-        ax.clabel(cax, inline=1, fontsize=10,  fmt=r"%1.1f")
+        if clabels is not None:
+            fmt = {}
+            for l, s in zip(cax.levels, clabels):
+                fmt[l] = s
+            ax.clabel(cax, cax.levels, inline=True, fmt=fmt, fontsize=10)
+        else:
+            ax.clabel(cax, inline=1, fontsize=10,  fmt=r"%1.1f")
 
-    ax.legend()
+#    ax.legend()
     # Add x and y label if contains in the dataFrame
     if df.columns.name is not None:
         ax.set_xlabel(df.columns.name)
