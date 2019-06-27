@@ -12,7 +12,7 @@ from matplotlib.colors import Normalize
 
 import numpy as np
 import pandas as pd
-import xarray as xa
+
 
 
 def centerToEdge(array):
@@ -129,6 +129,7 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True,
         Arguments applied to matplotlib.axes.Axes.contourf
     """
     
+    import xarray as xa
     if type(df)==xa.DataArray: raise NotImplementedError
         
     if ax is None:
