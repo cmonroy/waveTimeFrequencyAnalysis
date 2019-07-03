@@ -5,6 +5,8 @@ package_dir= { "droppy" : '.' ,
               "droppy.Reader" : r"./Reader" ,
               "droppy.pyplotTools" : r"./pyplotTools" ,
               "droppy.TimeDomain" : r"./TimeDomain" ,
+              "droppy.math" : r"./math" ,
+              "droppy.Form" : r"./Form" ,
              }
 
 packages = package_dir.keys()
