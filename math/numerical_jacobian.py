@@ -8,7 +8,7 @@ def jac_i( i, func, x0, f0, epsilon, *args):
     dx[i] = epsilon
     return (func(*((x0+dx,)+args)) - f0)/epsilon
 
-def approx_jacobian_n(x, func, epsilon, n=1,*args):
+def approx_jacobian_n(x, func, epsilon, fx = None, nproc=1, *args):
     """
     Approximate the Jacobian matrix of a callable function.
 
@@ -36,19 +36,42 @@ def approx_jacobian_n(x, func, epsilon, n=1,*args):
     The approximation is done using forward differences.
 
     """
-
     n = len(x)
     x0 = np.asfarray(x)
-    f0 = np.atleast_1d(func(*((x0,)+args)))
+
+    if fx is None :
+        f0 = np.atleast_1d(func(*((x0,)+args)))
+    else :
+        f0 = np.atleast_1d(fx)
+
     jac = np.zeros([n, len(f0)])
-    p = Pool(n)
-    for i, res in enumerate(p.map( partial( jac_i, func = func, x0=x0, f0=f0, epsilon=epsilon,*args) , list(range(n))  )) :
-        jac[i] = res
+
+    if nproc > 1 :
+        p = Pool(nproc)
+        for i, res in enumerate(p.map( partial( jac_i, func = func, x0=x0, f0=f0, epsilon=epsilon,*args) , list(range(n))  )) :
+            jac[i] = res
+    else :
+        dx = np.zeros(len(x0))
+        for i in range(len(x0)):
+            dx[i] = epsilon
+            jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
+            dx[i] = 0.0
+
+
+
     return jac.transpose()
 
 
 
-def test_fun( x ):
+
+
+def test_fun1( x ):
+    y = np.empty(x.shape)
+    y[:] = x
+    y[:-1] = x[:-1]*2
+    return y.sum()
+
+def test_fun2( x ):
     y = np.empty(x.shape)
     y[:] = x
     y[:-1] = x[:-1]*2
@@ -56,6 +79,14 @@ def test_fun( x ):
 
 
 if __name__ == "__main__" :
-    print (approx_jacobian( np.array([1,2,3,4]), test_fun, 0.001 ))
-    print (approx_jacobian_n( np.array([1,2,3,4]), test_fun, 0.001,  n = 4 ))
+
+    x0 = np.array(np.linspace(1,12,4))
+    for test_fun in [test_fun1] :
+        print (test_fun)
+        print (approx_jacobian( x0, test_fun, 0.001 ))
+        print (approx_jacobian_n( x0, test_fun, 0.001,  nproc = 1 ))
+        print (approx_jacobian_n( x0, test_fun, 0.001,  nproc = 4 ))
+        print (approx_jacobian_n( x0, test_fun, 0.001, test_fun(x0), nproc = 4 ))
+
+
 
