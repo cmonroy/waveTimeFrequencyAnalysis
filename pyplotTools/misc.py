@@ -23,30 +23,43 @@ def pyplotLegend(plt):
     uniqueHandles = [handles[labels.index(l)] for l in uniqueLabels ]
     return uniqueHandles, uniqueLabels
 
-
-def autoscale_y(ax,margin=0.1):
-    """This function rescales the y-axis based on the data that is visible given the current xlim of the axis.
+def autoscale_xy(ax,axis='y',margin=0.1):
+    """This function rescales the x-axis or y-axis based on the data that is visible on the other axis.
     ax -- a matplotlib axes object
+    axis -- axis to rescale ('x' or 'y')
     margin -- the fraction of the total height of the y-data to pad the upper and lower ylims"""
 
     import numpy as np
 
-    def get_bottom_top(line):
+    def get_boundaries(xd,yd,axis):
+        if axis=='x':
+            bmin,bmax = ax.get_ylim()
+            displayed = xd[((yd>bmin) & (yd<bmax))]
+        elif axis=='y':
+            bmin,bmax = ax.get_xlim()
+            displayed = yd[((xd>bmin) & (xd<bmax))]
+        h = np.max(displayed) - np.min(displayed)
+        cmin = np.min(displayed)-margin*h
+        cmax = np.max(displayed)+margin*h
+        return cmin,cmax
+
+    cmin,cmax = np.inf, -np.inf
+    
+    #For lines
+    for line in ax.get_lines():
         xd = line.get_xdata()
         yd = line.get_ydata()
-        lo,hi = ax.get_xlim()
-        y_displayed = yd[((xd>lo) & (xd<hi))]
-        h = np.max(y_displayed) - np.min(y_displayed)
-        bot = np.min(y_displayed)-margin*h
-        top = np.max(y_displayed)+margin*h
-        return bot,top
+        new_min, new_max = get_boundaries(xd,yd,axis=axis)
+        if new_min < cmin: cmin = new_min
+        if new_max > cmax: cmax = new_max
 
-    lines = ax.get_lines()
-    bot,top = np.inf, -np.inf
+    #For other collection (scatter)
+    for col in ax.collections:
+        xd = col.get_offsets().data[:,0]
+        yd = col.get_offsets().data[:,1]
+        new_min, new_max = get_boundaries(xd,yd,axis=axis)
+        if new_min < cmin: cmin = new_min
+        if new_max > cmax: cmax = new_max
 
-    for line in lines:
-        new_bot, new_top = get_bottom_top(line)
-        if new_bot < bot: bot = new_bot
-        if new_top > top: top = new_top
-
-    ax.set_ylim(bot,top)
+    if   axis=='x': ax.set_xlim(cmin,cmax)
+    elif axis=='y': ax.set_ylim(cmin,cmax)
