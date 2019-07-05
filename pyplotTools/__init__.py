@@ -5,3 +5,4 @@ from .misc import newLinestyleIterator, pyplotLegend, autoscale_xy
 from .surfacePlot import mapFunction
 from .scatterPlot import kde_scatter, density_scatter
 from .mplZoom import ZoomPan
+from .meshPlot import plotMesh
