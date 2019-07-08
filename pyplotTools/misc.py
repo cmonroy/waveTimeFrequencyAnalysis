@@ -47,8 +47,8 @@ def autoscale_xy(ax,axis='y',margin=0.1):
     
     #For lines
     for line in ax.get_lines():
-        xd = line.get_xdata()
-        yd = line.get_ydata()
+        xd = line.get_xdata(orig=False)
+        yd = line.get_ydata(orig=False)
         new_min, new_max = get_boundaries(xd,yd,axis=axis)
         if new_min < cmin: cmin = new_min
         if new_max > cmax: cmax = new_max
