@@ -11,15 +11,12 @@ def tecplot_HOS(file):
     import pandas as pd
     import re
 
-    try :     # Python 3
-        from io import StringIO
-    except :  # Python 2
-        from cStringIO import StringIO
+    from io import StringIO
+
 
     with open(file, 'r') as a:
         data = a.read()
     blockList = [StringIO(str_) for str_ in data.split("\nZONE")]
-
 
 
     if len( blockList ) > 1 :   # Several "ZONE" block
@@ -41,7 +38,6 @@ def tecplot_HOS(file):
         return a
 
     else :   # Only one block
-        print ("Reading ponctual time series")
         #Parse variables :
         title = blockList[0].readline()
         while title.startswith("#") :

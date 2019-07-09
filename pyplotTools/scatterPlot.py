@@ -37,7 +37,7 @@ def kde_scatter( x , y, ax = None, sort = True , lib_kde = "scipy", **kwargs )  
 
 
 
-def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, interpolation = "linear", **kwargs )   :
+def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, interpolation = "linear", x_y = False,  **kwargs )   :
     """
     Scatter plot colored by 2d histogram
     """
@@ -52,6 +52,11 @@ def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, int
     if sort :
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
+
+
+    if x_y :
+        maxP, minP = max( np.max(x), np.max(y) ),  min( np.min(x), np.min(y) )
+        ax.plot(   [minP , maxP] , [minP , maxP]  )
 
     ax.scatter( x, y, c=z, edgecolor = "", **kwargs )
     return ax
