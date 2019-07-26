@@ -9,7 +9,7 @@ import time
 import numpy as np
 import numpy.linalg as LA
 import scipy
-from droppy.math.numerical_jacobian import approx_jacobian_n
+from droppy.numerics.numerical_jacobian import approx_jacobian_n
 
 # -----------------------------------------------------------------------------
 
