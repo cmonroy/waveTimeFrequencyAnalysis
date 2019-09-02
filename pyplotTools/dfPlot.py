@@ -95,8 +95,8 @@ def dfSurfaceAndMarginals( df, surfaceArgs, cumulative = True ):
     return fig
 
 
-def dfSurface(df, ax=None, nbColors=200, interpolate=True,
-              polar=False, polarConvention="seakeeping", colorbar=False, scale = None, vmin = None, vmax = None, **kwargs):
+def dfSurface(df, ax=None, nbColors=200, interpolate=True, polar=False, polarConvention="seakeeping",
+              colorbar=False, cmap='viridis', scale = None, vmin = None, vmax = None, **kwargs):
     """Surface plot from pandas.DataFrame
     
     Parameters
@@ -152,10 +152,10 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True,
         val = df.values
 
     if interpolate:
-        cax = ax.contourf(df.columns.astype(float), df.index, val, levels=nbColors, vmin=vmin, vmax=vmax, **kwargs)
+        cax = ax.contourf(df.columns.astype(float), df.index, val, cmap=cmap, levels=nbColors, vmin=vmin, vmax=vmax, **kwargs)
     else:
         try:
-            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, vmin=vmin, vmax=vmax, **kwargs)
+            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
         except ValueError:
             raise(Exception("Index is not evenly spaced, try with interpolate = True"))
 
@@ -168,7 +168,7 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True,
     # Add colorbar, make sure to specify tick locations to match desired ticklabels
     if colorbar:
         cbar = ax.get_figure().colorbar(cax)
-        cbar.set_clim(vmin=vmin, vmax=vmax)
+        cbar.mappable.set_clim(vmin=vmin, vmax=vmax)
 
     return ax
 
