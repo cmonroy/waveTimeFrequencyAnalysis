@@ -2,11 +2,12 @@
 from distutils.core import setup
 
 package_dir= { "droppy" : '.' ,
-              "droppy.Reader" : r"./Reader" ,
-              "droppy.pyplotTools" : r"./pyplotTools" ,
-              "droppy.TimeDomain" : r"./TimeDomain" ,
-              "droppy.math" : r"./math" ,
-              "droppy.Form" : r"./Form" ,
+               "droppy.Reader" : r"./Reader" ,
+               "droppy.pyplotTools" : r"./pyplotTools" ,
+               "droppy.TimeDomain" : r"./TimeDomain" ,
+               "droppy.math" : r"./math" ,
+               "droppy.Form" : r"./Form" ,
+               "droppy.interpolate" : r"./interpolate" ,
              }
 
 packages = package_dir.keys()
