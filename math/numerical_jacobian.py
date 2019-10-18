@@ -47,9 +47,10 @@ def approx_jacobian_n(x, func, epsilon, fx = None, nproc=1, *args):
     jac = np.zeros([n, len(f0)])
 
     if nproc > 1 :
-        p = Pool(nproc)
+        p = Pool(nproc)  # p = ProcessPoolExecutor(nproc) should work as well
         for i, res in enumerate(p.map( partial( jac_i, func = func, x0=x0, f0=f0, epsilon=epsilon,*args) , list(range(n))  )) :
             jac[i] = res
+
     else :
         dx = np.zeros(len(x0))
         for i in range(len(x0)):

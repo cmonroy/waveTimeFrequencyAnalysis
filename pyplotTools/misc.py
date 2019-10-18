@@ -1,4 +1,3 @@
-import matplotlib
 
 import itertools
 colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
@@ -16,12 +15,18 @@ def newLinestyleIterator() :
     return itertools.cycle(linestyleCycle)
 
 
-def pyplotLegend(plt):
-    ax = plt.get_axes()
-    handles, labels =  ax[0].get_legend_handles_labels()
+def pyplotLegend(plt=None,ax=None):
+    if plt is not None :
+        ax = plt.get_axes()[0]
+    handles, labels =  ax.get_legend_handles_labels()
     uniqueLabels = sorted(list(set(labels )))
     uniqueHandles = [handles[labels.index(l)] for l in uniqueLabels ]
     return uniqueHandles, uniqueLabels
+
+
+def uniqueLegend(ax, *args, **kwargs) :
+    ax.legend( *pyplotLegend(ax=ax), *args, **kwargs )
+
 
 def autoscale_xy(ax,axis='y',margin=0.1):
     """This function rescales the x-axis or y-axis based on the data that is visible on the other axis.
@@ -32,19 +37,19 @@ def autoscale_xy(ax,axis='y',margin=0.1):
     import numpy as np
 
     def get_boundaries(xd,yd,axis):
-        if axis=='x':
+        if axis == 'x':
             bmin,bmax = ax.get_ylim()
-            displayed = xd[((yd>bmin) & (yd<bmax))]
-        elif axis=='y':
+            displayed = xd[((yd > bmin) & (yd < bmax))]
+        elif axis == 'y':
             bmin,bmax = ax.get_xlim()
-            displayed = yd[((xd>bmin) & (xd<bmax))]
+            displayed = yd[((xd > bmin) & (xd < bmax))]
         h = np.max(displayed) - np.min(displayed)
         cmin = np.min(displayed)-margin*h
         cmax = np.max(displayed)+margin*h
         return cmin,cmax
 
     cmin,cmax = np.inf, -np.inf
-    
+
     #For lines
     for line in ax.get_lines():
         xd = line.get_xdata(orig=False)

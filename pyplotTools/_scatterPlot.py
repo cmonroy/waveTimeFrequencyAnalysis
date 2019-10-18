@@ -6,6 +6,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interpn
 
+
+
+
+def scatterPlot(df , x, y , ax = None, x_y = False , title = None, meanCov = None, **kwargs) :
+    """
+    Scatter plot, with additional option compared to pandas.plot(kind="scatter")
+    """
+
+    if ax is None :
+        fig ,ax = plt.subplots()
+
+    df.plot(ax=ax,x=x, y=y, kind = "scatter", **kwargs)
+
+    _x = df.loc[:,x]
+    _y = df.loc[:,y]
+
+    displayMeanCov(df,_x,_x,meanCov,ax)
+
+    if x_y is True :
+        add_x_y(_x,_y,ax)
+
+    return ax
+
+
 def kde_scatter( x , y, ax = None, sort = True , lib_kde = "scipy", **kwargs )   :
     """
     Scatter plot colored by kde
@@ -55,12 +79,29 @@ def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, int
 
 
     if x_y :
-        maxP, minP = max( np.max(x), np.max(y) ),  min( np.min(x), np.min(y) )
-        ax.plot(   [minP , maxP] , [minP , maxP]  )
+        add_x_y( x, y,  ax )
 
     ax.scatter( x, y, c=z, edgecolor = "", **kwargs )
     return ax
 
+
+def add_x_y( x,y, ax ) :
+    minMax = [min(x.min(),y.min()),max(x.max(),y.max())]
+    ax.plot(minMax , minMax , "-" )
+
+
+def displayMeanCov(df,x,y, meanCov,ax):
+    if meanCov is not None :
+        if meanCov is True:
+            mean = np.mean((df.loc[:,y] / df.loc[:,x]))
+            cov = np.std((df.loc[:,y] / df.loc[:,x])) / mean
+            mean -= 1
+            ax.text( 0.8 , 0.2 ,  "mean : {:.1%}\nCOV : {:.1%}".format(mean , cov) , transform=ax.transAxes ) # verticalalignment='center'
+
+        elif meanCov == "abs_mean_std" :
+            mean = np.mean((df.loc[:,y] - df.loc[:,x]))
+            std = np.std((df.loc[:,y] - df.loc[:,x]))
+            ax.text( 0.8 , 0.2 ,  "mean : {:.2f}\nSTD : {:.2f}".format(mean , std) , transform=ax.transAxes ) # verticalalignment='center'
 
 
 if "__main__" == __name__ :
