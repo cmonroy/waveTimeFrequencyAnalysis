@@ -1,4 +1,4 @@
-from .TimeSignals import getPSD, bandPass, slidingFFT,  fftDf, comparePlot, getRAO
+from .TimeSignals import getPSD, bandPass, slidingFFT,  fftDf, comparePlot, getRAO, reSample
 from .upCross import upCrossMinMax, plotUpCross, getUpCrossID , getDownCrossID
 from .srs import ShockResponseSpectrum
 from ..Reader import dfRead as read

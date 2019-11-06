@@ -4,12 +4,9 @@
 
 """
 
-
-from __future__ import print_function
 from matplotlib import pyplot as plt
-
 from matplotlib.colors import Normalize
-
+from droppy import logger
 import numpy as np
 import pandas as pd
 
@@ -95,43 +92,43 @@ def dfSurfaceAndMarginals( df, surfaceArgs, cumulative = True ):
     return fig
 
 
-def dfSurface(df, ax=None, nbColors=200, interpolate=True,
-              polar=False, polarConvention="seakeeping", colorbar=False, scale = None, vmin = None, vmax = None, **kwargs):
+def dfSurface(df, ax=None, nbColors=200, interpolate=True, polar=False, polarConvention="seakeeping",
+              colorbar=False, cmap='viridis', scale = None, vmin = None, vmax = None, **kwargs):
     """Surface plot from pandas.DataFrame
-    
+
     Parameters
     ----------
     df: pandas.DataFrame or xarray.DataArray
-    
+
         Dataframe formmated as follow:
         * columns : x or theta values
         * index : y or r values
         * data = data
-        
+
         DataArray of dimension 2 formmated as follow:
         * data = data
         * dims : x and y values
 
     ax: matplotlib.axes._subplots.AxesSubplot
         Specify existing axis to plot
-        
+
     nbColors: int, default 200
         Number of colorscale levels
-        
+
     interpolate: bool, default True
         * if True, data are considered as node value and interpolated in between
         * if False, data are considered as center cell value  => similar to sns.heatmap
-        
+
     colorbar: bool, default False
         Specify is colobar should be plotted
-        
+
     **kwargs:
         Arguments applied to matplotlib.axes.Axes.contourf
     """
-    
+
     import xarray as xa
     if type(df)==xa.DataArray: raise NotImplementedError
-        
+
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, polar=polar)
@@ -142,20 +139,20 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True,
             elif polarConvention == "geo":
                 ax.set_theta_zero_location("N")
                 ax.set_theta_direction(1)
-            
+
             if df.columns.astype(float).max()>2*np.pi:
                 df.columns = [np.deg2rad(i) for i in df.columns.astype(float)]
-                
+
     if scale is not None:
         val = scale(df.values)
     else :
         val = df.values
 
     if interpolate:
-        cax = ax.contourf(df.columns.astype(float), df.index, val, levels=nbColors, vmin=vmin, vmax=vmax, **kwargs)
+        cax = ax.contourf(df.columns.astype(float), df.index, val, cmap=cmap, levels=nbColors, vmin=vmin, vmax=vmax, **kwargs)
     else:
         try:
-            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, vmin=vmin, vmax=vmax, **kwargs)
+            cax = ax.pcolormesh(centerToEdge(df.columns.astype(float)), centerToEdge(df.index), val, cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
         except ValueError:
             raise(Exception("Index is not evenly spaced, try with interpolate = True"))
 
@@ -168,26 +165,26 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True,
     # Add colorbar, make sure to specify tick locations to match desired ticklabels
     if colorbar:
         cbar = ax.get_figure().colorbar(cax)
-        cbar.set_clim(vmin=vmin, vmax=vmax)
+        cbar.mappable.set_clim(vmin=vmin, vmax=vmax)
 
     return ax
 
 
 def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=True, clabels=None, **kwargs):
     """Iso contour plot from pandas.DataFrame
-    
+
     Parameters
     ----------
     df: pandas.DataFrame
         Dataframe formmated as follow:
-            
+
         * index : y or theta values
         * columns : x or theta values
         * data = data
-        
+
     ax: matplotlib.axes._subplots.AxesSubplot
         Specify existing axis to plot
-        
+
     clabels: list
         Custom contour labels
 
@@ -260,7 +257,7 @@ def dfSlider(dfList, labels=None, ax=None, display=True, **kwargs):
 
     lList = []
     for idf, df in enumerate(dfList):
-        l, = ax.plot(df.columns, df.iloc[a0, :], lw=2, label=labels[idf], **kwargs)
+        l, = ax.plot(df.columns.astype(float).values, df.iloc[a0, :], lw=2, label=labels[idf], **kwargs)
         lList.append(l)
 
     ax.legend(loc=2)
@@ -268,8 +265,8 @@ def dfSlider(dfList, labels=None, ax=None, display=True, **kwargs):
     df = dfList[0]
     ax.set_title(df.index[0])
 
-    tmin = min([min(df.columns) for df in dfList])
-    tmax = max([max(df.columns) for df in dfList])
+    tmin = min([min(df.columns.astype(float).values) for df in dfList])
+    tmax = max([max(df.columns.astype(float).values) for df in dfList])
     ymin = min([df.min().min() for df in dfList])
     ymax = max([df.max().max() for df in dfList])
 
@@ -313,14 +310,15 @@ def dfSlider(dfList, labels=None, ax=None, display=True, **kwargs):
     return ax
 
 
-def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, ylim=None, xlabel="x(m)", ylabel="Elevation(m)", codec="libx264", **kwargs):
+def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, ylim=None, xlabel="x(m)", ylabel="Elevation(m)", codec="libx264",
+                  extra_args = None, ax = None, label = None,  **kwargs):
     """
        Animate a dataFrame where time is the index, and columns are the "spatial" position
     """
 
     from matplotlib import animation
 
-    print("Making animation file : ", movieName)
+    logger.info("Making animation file : "+ movieName)
 
     global pause
     pause = False
@@ -331,7 +329,10 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
 
     nShaddow = max(1, nShaddow)
 
-    fig, ax = plt.subplots()
+    if ax is None :
+        fig, ax = plt.subplots()
+    else :
+        fig = ax.get_figure()
     fig.canvas.mpl_connect('button_press_event', onClick)
     ls = []
     for i in range(nShaddow):
@@ -360,7 +361,7 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
     ax.set_ylabel(ylabel)
 
     def run(itime):
-        ax.set_title("{:.1f}s".format(df.index[itime*rate]))
+        ax.set_title("t = {:.1f}s".format(df.index[itime*rate]))
         for s in range(nShaddow):
             if not pause:
                 if itime > s:
@@ -369,10 +370,12 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
 
     ani = animation.FuncAnimation(fig, run, range(len(df)), blit=True, interval=30, repeat=False)
 
+    ax.legend()
+
     if movieName is None:
         plt.show()
     else:
-        mywriter = animation.FFMpegWriter(fps=25, codec=codec)
+        mywriter = animation.FFMpegWriter(fps=25, codec=codec, extra_args = extra_args)
         ani.save(movieName + '.mp4', writer=mywriter)
 
 

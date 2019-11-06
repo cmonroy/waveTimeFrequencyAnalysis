@@ -12,7 +12,7 @@ class DecayAnalysis(object):
 
         self.se = se
         # Read the mcnSolve test time serie
-        self.time = se.index
+        self.time = se.index.values
         self.motion = se.values
 
         #Method

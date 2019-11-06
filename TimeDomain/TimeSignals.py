@@ -5,7 +5,7 @@
   Time series function, using pandas DataFrame
 """
 
-from __future__ import absolute_import, print_function
+
 import numpy as np
 import xarray as xa
 import pandas as pd
@@ -14,6 +14,8 @@ from scipy.interpolate import interp1d, UnivariateSpline
 from math import pi, log
 from matplotlib import pyplot as plt
 from .. import pyplotTools
+from droppy import logger
+
 
 
 def scal_ramp(time, tStart, tEnd):
@@ -164,7 +166,7 @@ def getRAO( df, cols=None, *args, **kwargs ):
 
     Use Welch method to return RAO (amplitudes and phases)
 
-       df = dataframe containing wave elevation and response
+       df = dataframe containing wave elevation and response (wave elevation as first columns, and response as 2nd columns)
        cols (tuple) : indicate labels of elevation and response
        *args, **kwargs : passed to getPSD method
     """
@@ -216,6 +218,9 @@ def bandPass(df, fmin=None, fmax=None, unit="Hz"):
     """
        Return filtered signal
     """
+
+    logger.debug("Starting bandPass")
+
     from scipy.fftpack import rfft, irfft, rfftfreq  # Warning convention of scipy.fftpack != numpy.fft   !!!
     if unit in ["rad", "rad/s", "Rad", "Rad/s"]:
         if fmin is not None:
@@ -230,6 +235,7 @@ def bandPass(df, fmin=None, fmax=None, unit="Hz"):
         ise = False
     filtered = pd.DataFrame(index=df.index)
     W = rfftfreq(df.index.size, d=dx(df))
+
     for col in df.columns:
         tmp = rfft(df[col])
         if fmin is not None:
@@ -256,12 +262,12 @@ def derivFFT(df, n=1):
         from copy import deepcopy
         fft0 = deepcopy(fft)
         if n > 0:
-            fft *= (1j * 2 * pi * freq[:])**n  # Derivation in frequency domain
+            fft0 *= (1j * 2 * pi * freq[:])**n  # Derivation in frequency domain
         else:
-            fft[-n:] *= (1j * 2 * pi * freq[-n:])**n
-            fft[0:-n] = 0.
+            fft0[-n:] *= (1j * 2 * pi * freq[-n:])**n
+            fft0[0:-n] = 0.
 
-        tts = np.real(np.fft.ifft(fft))
+        tts = np.real(np.fft.ifft(fft0))
         tts -= tts[0]
         deriv.append(tts)  # Inverse FFT
 
@@ -309,7 +315,7 @@ def integ(df, n=1, axis=None, origin=None):
         integ = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
     else:
         raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
-        
+
     #compute first integral
     if n == 1:
         if type(df)==pd.core.frame.DataFrame:
@@ -322,7 +328,7 @@ def integ(df, n=1, axis=None, origin=None):
             integ.data = integrate.cumtrapz(df, df.coords[df.dims[axis]].values,axis=axis, initial=0)
     else:
         raise(Exception('ERROR: 2nd integral not implemented yet'))
-            
+
     return integ
 
 def smooth(df, k=3, axis=None, inplace=False):
