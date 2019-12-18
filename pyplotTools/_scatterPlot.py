@@ -67,8 +67,10 @@ def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, int
     """
     if ax is None :
         fig , ax = plt.subplots()
+
+
     data , x_e, y_e = np.histogram2d( x, y, bins = bins)
-    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = interpolation, bounds_error = False, fill_value = np.nan )
+    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = interpolation, bounds_error = False, fill_value = 0.0 )
     if scale is not None :
         z = scale(z)
 
