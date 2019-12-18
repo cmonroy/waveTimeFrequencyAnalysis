@@ -69,8 +69,14 @@ def reSample(df, dt=None, xAxis=None, n=None, kind='linear', extrapolate=False,e
 
 
 def dx(df):
-    return (df.index[-1] - df.index[0]) / (len(df) - 1)
-
+    """
+    Get sample spacing (time step) from index of dataframe df. Regular spacing is assumed.
+    """
+    if isinstance(df.index,pd.DatetimeIndex):
+        T = (df.index[-1] - df.index[0]).total_seconds()
+    else:
+        T = (df.index[-1] - df.index[0])
+    return T/(len(df.index)-1)
 
 def slidingFFT(se, T,  n=1, tStart=None, preSample=False, nHarmo=5, kind=abs, phase=None):
     """
@@ -114,8 +120,7 @@ def slidingFFT(se, T,  n=1, tStart=None, preSample=False, nHarmo=5, kind=abs, ph
 
 
 def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
-    """
-       Compute the power spectral density
+    """Compute the power spectral density
     """
     from scipy.signal import welch
 
@@ -139,8 +144,7 @@ def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit
 
 
 def getCSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
-    """
-       Compute the cross-spectral density
+    """ Compute the cross-spectral density
     """
     from scipy.signal import csd
 
@@ -162,7 +166,7 @@ def getCSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit
 
 
 def getRAO( df, cols=None, *args, **kwargs ):
-    """Return RAO from wave elevation and response signal
+    """ Return RAO from wave elevation and response signal
 
     Use Welch method to return RAO (amplitudes and phases)
 
@@ -214,40 +218,99 @@ def fftDf(df, part=None, index="Hz"):
         return res
 
 
-def bandPass(df, fmin=None, fmax=None, unit="Hz"):
+def bandPass(df, fmin=None, fmax=None, n=None, unit="Hz", method='scipy', butterOrder=1):
+    """ Return filtered signal
+    
+        Parameters
+        ----------
+        df: pandas.DataFrame or pandas.Series
+            Time series on which band-pass filter is applied
+        fmin: float or array-like of float, optional
+            Minumum cut-off frequency for band-pass filtering. If a single value is passed, the same filtering is applied to all time series. A list can be provided with a boundary for each column.
+        fmax: float or array-like of float, optional
+            Maximum cut-off frequency for band-pass filtering. If a single value is passed, the same filtering is applied to all time series. A list can be provided with a boundary for each column.
+        n: int, optional
+            Length of the Fourier transform. If n is not specified, it is set as the number of time steps.
+        unit: str, optional, default "Hz"
+            Unit used for fmin and fmax. Either "Hz" (default) or "rad/s".
+        method: str, optional, default "scipy"
+            Method used for filtering. Either FFT with "scipy" (default) and "numpy", or Butterworth "butterworth".
+        butterOrder: int, optional, default 1
+            If "butterworth" engine is used, define order of Butterworth filter.
     """
-       Return filtered signal
-    """
+
+    if df.isnull().any().any():
+        raise ValueError('Band-pass filtering cannot be applied to data containing NaNs')
 
     logger.debug("Starting bandPass")
-
-    from scipy.fftpack import rfft, irfft, rfftfreq  # Warning convention of scipy.fftpack != numpy.fft   !!!
-    if unit in ["rad", "rad/s", "Rad", "Rad/s"]:
-        if fmin is not None:
-            fmin = fmin / (2 * pi)
-        if fmax is not None:
-            fmax = fmax / (2 * pi)
-
+    
+    #If pandas series is given, transform to DataFrame
     if type(df) == pd.Series:
         df = pd.DataFrame(df)
         ise = True
     else:
         ise = False
-    filtered = pd.DataFrame(index=df.index)
-    W = rfftfreq(df.index.size, d=dx(df))
+    
+    #Transform freq boundaries into array
+    if not hasattr(fmin, "__iter__"): fmin = np.array([fmin]*len(df.columns))
+    if not hasattr(fmax, "__iter__"): fmax = np.array([fmax]*len(df.columns))
+    
+    #Change units to Hz
+    if unit in ["rad", "rad/s", "Rad", "Rad/s"]:
+        if fmin is not None: fmin = fmin/(2*pi)
+        if fmax is not None: fmax = fmax/(2*pi)
+    elif unit not in ["Hz","hz"]:
+        raise ValueError('"{}" unit not recognized.'.format(unit))
 
-    for col in df.columns:
-        tmp = rfft(df[col])
-        if fmin is not None:
-            tmp[(W < fmin)] = 0
-        if fmax is not None:
-            tmp[(W > fmax)] = 0
-        filtered[col] = irfft(tmp)
+    NN = len(df.index)
+    if n is None: n = df.index.size
+    
+    filtered = pd.DataFrame(index=df.index,columns=df.columns)
+
+    # Warning convention of scipy.fftpack != numpy.fft   !!!
+    if method=='scipy':
+        from scipy.fftpack import rfft, irfft, rfftfreq
+        W = rfftfreq(n, d=dx(df))
+    elif method=='numpy':
+        from numpy.fft import fft, ifft, fftfreq
+        W = fftfreq(n, d=dx(df))
+
+    for i, col in enumerate(df.columns):
+        
+        if method=='scipy':
+            tmp = rfft(df[col].values, n=n)
+            if fmin[i] is not None: tmp[(W < fmin[i])] = 0.
+            if fmax[i] is not None: tmp[(W > fmax[i])] = 0.
+            filtered[col] = irfft(tmp)
+            
+        elif method=='numpy':
+            tmp = fft(df[col].values, n=n)
+            if fmin[i] is not None: tmp[(abs(W) < fmin[i])] = 0.
+            if fmax[i] is not None: tmp[(abs(W) > fmax[i])] = 0.
+            filtered[col] = np.real(ifft(tmp))[:NN]
+            
+        elif method=='butterworth':
+            from scipy.signal import butter, filtfilt
+            if butterOrder<=0: raise ValueError('"butterOrder" cannot be lower than 1.')
+            
+            samplingFrequency = 1./dx(df)
+            nyquistFrequency = samplingFrequency / 2.
+            if fmin[i] and fmax[i]:
+               fCutMin = (f1/0.802)/nyquistFrequency
+               fCutMax = (f2/0.802)/nyquistFrequency
+               b, a = butter(butterOrder, [fCutMin, fCutMax], btype="bandpass")
+            elif fmin[i]:
+                 fCutMin = (fmin[i]/0.802)/nyquistFrequency
+                 b, a = butter(butterOrder, fCutMin, btype="highpass")
+            elif fmax[i]:
+                 fCutMax = (fmax[i]/0.802)/nyquistFrequency
+                 b, a = butter(butterOrder, fCutMax, btype="lowpass")
+            filtered[col] = filtfilt(b, a, df[col].values)
+
     if ise:
         return filtered.iloc[:, 0]
     else:
         return filtered
-
 
 def derivFFT(df, n=1):
     """ Deriv a signal trought FFT, warning, edge can be a bit noisy...
