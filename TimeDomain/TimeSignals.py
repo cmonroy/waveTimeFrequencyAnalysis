@@ -15,8 +15,7 @@ from math import pi, log
 from matplotlib import pyplot as plt
 from .. import pyplotTools
 from droppy import logger
-
-
+from datetime import datetime
 
 def scal_ramp(time, tStart, tEnd):
     time = time - tStart
@@ -348,14 +347,19 @@ def deriv(df, n=1, axis=None):
         deriv = xa.DataArray(coords=df.coords,dims=df.dims,data=np.empty(df.shape))
     else:
         raise(Exception('ERROR: input type not handeled, please use pandas Series or DataFrame'))
+        
+    #Handle datetime index
+    if type(df) in [pd.core.frame.DataFrame,pd.core.series.Series]:
+        if isinstance(df.index, pd.DatetimeIndex): idx = (df.index-datetime(1970,1,1)).total_seconds()
+        else: idx = df.index
 
     #compute first derivative
     if n == 1:
         if type(df)==pd.core.frame.DataFrame:
             for col in df.columns:
-                deriv.loc[:,col] = np.gradient(df[col],df.index)
+                deriv.loc[:,col] = np.gradient(df[col],idx)
         elif type(df)==pd.core.series.Series:
-            deriv[:] = np.gradient(df,df.index)
+            deriv[:] = np.gradient(df,idx)
         elif type(df)==xa.core.dataarray.DataArray:
             if axis==None: raise(Exception('ERROR: axis should be specifed if using DataArray'))
             deriv.data = np.gradient(df,df.coords[df.dims[axis]].values,axis=axis)
