@@ -7,3 +7,4 @@ from .mplZoom import ZoomPan
 from .meshPlot import plotMesh
 from .statPlots import qqplot, qqplot2, distPlot, probN, probN_ci
 from .addcopyfighandler import copyToClipboard_on
+from .concatPlot import readImage, concatPlot
