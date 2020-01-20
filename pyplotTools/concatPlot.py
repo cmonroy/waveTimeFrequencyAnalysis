@@ -9,12 +9,13 @@ import os
 from os.path import join
 import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont
 
 def readImage(path):
     return Image.open(path)
 
 def concatPlot(ims,nline=1,ncol=1,offset=[0,0],title=None,fontsize=30):
+
+
     """
     Concatenate a list of images
 
@@ -38,7 +39,10 @@ def concatPlot(ims,nline=1,ncol=1,offset=[0,0],title=None,fontsize=30):
     dst : Pillow.Image
         Returns the concatenated image. It can be saved by using Pillow.Image.save(...).
     """
-    
+
+    #Import here to avoid mandatory dependence to PIL droppy
+    from PIL import Image, ImageDraw, ImageFont
+
     #Check number of lineas and columns
     if nline*ncol <len(ims):
         print('WARNING: number of slots ({}) is lower than number of images ({}).'.format(nline*ncol,len(ims)))
