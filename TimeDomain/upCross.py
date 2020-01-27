@@ -100,7 +100,18 @@ def upCrossMinMax( se, upCrossID = None , threshold = "mean" ) :
                                   "MinimumTime" : minimumTime , "MaximumTime" : maximumTime ,
                                   "upCrossTime" : upCrossTime , "Period": periods  } )
 
-
+def getUpCrossDist(upCrossDf) :
+    """
+       Get Up-crossing distribution from upCrossMinMax result
+    """
+    
+    N = upCrossDf.shape[0]
+    p_ex = np.arange(1./N,1.+1./N,1./N)
+    df = pd.DataFrame(index=p_ex,columns=['Minimum','Maximum'])
+    df.Minimum = upCrossDf.Minimum.sort_values(ascending=True).values
+    df.Maximum = upCrossDf.Maximum.sort_values(ascending=False).values
+    
+    return df
 
 def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
     """
@@ -121,4 +132,17 @@ def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
     ax.legend(loc = 2)
     return ax
 
+def plotUpCrossDist( upCrossDist , ax = None, label=None):
+    """
+       Plot upcrossing distribution
+    """
+    from matplotlib import pyplot as plt
+    if ax is None : fig , ax = plt.subplots()
+    prob = np.concatenate([upCrossDist.index,upCrossDist.index[::-1]])
+    values = np.concatenate([upCrossDist.Minimum.values,upCrossDist.Maximum.values[::-1]])
+    ax.plot(values,prob,'-+',label=label)
+    ax.set_ylabel('Exeedence probability')
+    ax.set_yscale('log')
+    if label is not None: ax.legend()
+    return ax
 
