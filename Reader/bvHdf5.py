@@ -3,8 +3,32 @@ import numpy as np
 import h5py
 import os
 
-def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True) :
-    """ Read BV format
+def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True, trunc=False):
+    """ Read BV HDF5 format
+    
+    Parameters
+    ----------
+    filename : str
+        File name.
+    dataset : str, optional
+        Dataset identifier. The default is "Data".
+    headerOnly : bool, optional
+        Read only header. The default is False.
+    usecols : array-like, optional
+        List of columns labels to read. If None, all columns are read. The default is None.
+    swmr : bool, optional
+        Read file with SWMR function. The default is True.
+    trunc : bool, optional
+        Truncate the tail of the signal if only zeros are encountered. The truncation is based on time axis. The default is False.
+
+    Returns
+    -------
+    time : numpy array
+        Array of time steps.
+    data : numpy array
+        Data array.
+    label : numpy array
+        Columns labels.
     """
 
     if not os.path.exists(filename) :
@@ -20,8 +44,13 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, sw
             data = []
         else :
             time = ds.dims[0][0][()]
-            data = ds[()] 
-
+            data = ds[()]
+    
+    if trunc:
+        idx = max(np.nonzero(time)[0])  #find maximum non zero index
+        time = time[:idx+1]
+        data = data[:idx+1,:]
+        
     if usecols is not None:
         useidx = [list(label).index(col) for col in usecols]
         return time, data[:,useidx], label[useidx]
