@@ -3,17 +3,17 @@ import numpy as np
 import h5py
 import os
 
-def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None) :
+def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True) :
     """ Read BV format
     """
 
     if not os.path.exists(filename) :
         raise(OSError (2 ,'No such file or directory', filename ))
 
-    with h5py.File(filename, "r") as f:
+    with h5py.File(filename, "r", swmr=swmr) as f:
         ds = f.get(dataset)
         label = ds.dims[1][0][()]
-        if label.dtype not in [int, float]  :
+        if label.dtype not in [int, float]:
             label = label.astype(str)
         if headerOnly :
             time = []
