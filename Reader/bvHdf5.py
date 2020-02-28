@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import os
 
-def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True, trunc=False):
+def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True, svwmr_trunc=None):
     """ Read BV HDF5 format
     
     Parameters
@@ -18,8 +18,8 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, sw
         List of columns labels to read. If None, all columns are read. The default is None.
     swmr : bool, optional
         Read file with SWMR function. The default is True.
-    trunc : bool, optional
-        Truncate the tail of the signal if only zeros are encountered. The truncation is based on time axis. The default is False.
+    svwmr_trunc : bool, optional
+        Truncate the tail of the signal if only zeros are encountered. The truncation is based on time axis. The default is True if swmr, False if not swmr.
 
     Returns
     -------
@@ -45,8 +45,8 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, sw
         else :
             time = ds.dims[0][0][()]
             data = ds[()]
-    
-    if trunc:
+
+    if ( svwmr and (svwmr_trunc is not False)) or (svwmr_trunc is True) :
         idx = max(np.nonzero(time)[0])  #find maximum non zero index
         time = time[:idx+1]
         data = data[:idx+1,:]
