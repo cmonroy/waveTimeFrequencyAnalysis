@@ -1,5 +1,5 @@
 from .TimeSignals import getPSD, bandPass, slidingFFT,  fftDf, comparePlot, getRAO, reSample
-from .upCross import upCrossMinMax, plotUpCross, getUpCrossID , getDownCrossID, getUpCrossDist, plotUpCrossDist
+from .upCross import upCrossMinMax, plotUpCross, getUpCrossID , getDownCrossID, getUpCrossDist, plotUpCrossDist, peaksMax, getPeaksBounds
 from .srs import ShockResponseSpectrum
 from ..Reader import dfRead as read
 #for backward compatibility, method read is now considered obsolete

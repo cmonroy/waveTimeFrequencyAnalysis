@@ -38,6 +38,9 @@ def getPeaksBounds(se, threshold):
     up_ = getUpCrossID( array, threshold )
     down_ = getDownCrossID( array, threshold )
 
+    if len(up_) == 0 : 
+        return np.array([], dtype = int) , np.array([], dtype = int)
+
     if down_[0] < up_[0] :
         down_ = down_[1:]
 
@@ -46,6 +49,20 @@ def getPeaksBounds(se, threshold):
 
     return up_, down_
 
+
+def peaksMax( se, threshold ) : 
+
+     up_, down_ = getPeaksBounds( se, threshold )
+     
+     maxIndex = np.empty( up_.shape , dtype = int )  
+
+     for i in range(len( up_ )) : 
+         maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i] ].argmax()
+     
+     return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] , 
+                                   "MaximumTime" : se.index[ maxIndex ] ,
+                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ]   } )
+     
 
 
 """
