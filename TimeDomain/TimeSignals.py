@@ -251,13 +251,15 @@ def bandPass(df, fmin=None, fmax=None, n=None, unit="Hz", method='scipy', butter
         ise = False
     
     #Transform freq boundaries into array
-    if not hasattr(fmin, "__iter__"): fmin = np.array([fmin]*len(df.columns))
-    if not hasattr(fmax, "__iter__"): fmax = np.array([fmax]*len(df.columns))
+    if not hasattr(fmin, "__iter__") : fmin = np.array([fmin]*len(df.columns))
+    if not hasattr(fmax, "__iter__") : fmax = np.array([fmax]*len(df.columns))
     
     #Change units to Hz
     if unit in ["rad", "rad/s", "Rad", "Rad/s"]:
-        if fmin is not None: fmin = fmin/(2*pi)
-        if fmax is not None: fmax = fmax/(2*pi)
+        if fmin[0] is not None: 
+            fmin /= 2*pi
+        if fmax[0] is not None: 
+            fmax /= 2*pi
     elif unit not in ["Hz","hz"]:
         raise ValueError('"{}" unit not recognized.'.format(unit))
 
@@ -564,6 +566,45 @@ def getAutoCorrelation( se ):
     result = np.correlate(xp, xp, mode='full')
     result = result[result.size // 2:]
     return pd.Series( index = np.arange( se.index[0]-se.index[0], len(result)*dx(se) ,  dx(se) ) , data = result / np.var(x) / len(x) )
+
+
+def getMotionAtPoint( motionDf, start_point, end_point, angleUnit  ) :
+    """
+    Parameters
+    ----------
+    motionDf : pd.DataFrame
+        Motion dataframe.
+    start_point : np.ndarray (3)
+        reference point of input motions
+    end_point : np.ndarray (3)
+        reference point of ouptut motions
+    angleUnit : str
+        "rad" or "deg"
+
+    Returns
+    -------
+    movedDf : pd.DataFrame
+        motions expressed at end_point reference point
+
+    """
+    
+    if angleUnit.lower() == "deg" :
+        angleConvert = np.pi / 180
+    elif angleUnit.lower() == "rad" :
+        angleConvert = 1.0
+    else : 
+        raise(Exception("angleUnit must be 'deg' ot 'rad'"))
+        
+        
+    move_vect = np.array( end_point ) - np.array( start_point )
+    movedDf = pd.DataFrame( index = motionDf.index, columns = motionDf.columns )
+    movedDf.values[:,0:3] = motionDf.values[:,0:3] + np.cross( motionDf.values[:,3:6] * angleConvert  , move_vect )
+    
+    return movedDf
+
+
+
+
 
 
 if __name__ == '__main__':
