@@ -14,9 +14,8 @@ def getLoadDistribution(fpath, xcut, ilc):
             print('Load:', loadid)
             # loop over all force cards
             for force in load:
-                f = force.xyz
                 # position of the node, based on the node id in the force card
-                x = model.nodes[force.node].xyz
-                icut = where(logical_and(x[0]>=xcut[:-1], x[0]<xcut[1:]))
-                fcut[icut] += f
+                x = model.nodes[force.node].xyz[0]
+                icut = where(logical_and(x>=xcut[:-1], x<xcut[1:]))
+                fcut[icut] += force.xyz
     return fcut
