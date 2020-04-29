@@ -2,11 +2,53 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import beta
 
-def probN( n ):
-   """
-     return probability vector
-   """
-   return 1 - ( np.arange( 1, n+1 ) / (n+1) )
+def probN( n, alphap = 0.0, betap = 0.0):
+    """Return exceedance probability of the ranked data
+    
+    (inverse of scipy.stats.mquantiles)
+
+    
+    Parameters
+    ----------
+    n : int
+        Size of the data vector
+    alphap : float, optional
+        Plotting positions parameter. The default is 0.0.
+    betap : float, optional
+        Plotting positions parameter. The default is 0.0.
+
+    Returns
+    -------
+    np.ndarray
+        Exceedance probability of the ranked data.
+
+
+
+    Typical values of (alphap,betap) are:
+        - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
+          (**R** type 4)
+        - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
+          (**R** type 5)
+        - (0,0)    : ``p(k) = k/(n+1)`` :
+          (**R** type 6)
+        - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
+          (**R** type 7, **R** default)
+        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
+          The resulting quantile estimates are approximately median-unbiased
+          regardless of the distribution of x.
+          (**R** type 8)
+        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
+          The resulting quantile estimates are approximately unbiased
+          if x is normally distributed
+          (**R** type 9)
+        - (.4,.4)  : approximately quantile unbiased (Cunnane)
+        - (.35,.35): APL, used with PWM
+
+    """
+
+    k = np.arange(1, n+1 , 1)
+    return 1 - (k - alphap)/(n + 1 - alphap - betap)
+
 
 
 def probN_ci( n, alpha = 0.05, method = "jeff" ):
@@ -72,16 +114,22 @@ def qqplot2(data_1, data_2, label_1=None, label_2=None, ax=None, x_y = True, mar
 
 
 
-def distPlot(data, frozenDist=None, ax=None, label=None, labelFit=None, marker="+", noData = False, order = 1, alpha_ci = None, period=None, **kwargs ):
+
+def distPlot(data, frozenDist=None, ax=None,
+             label=None, labelFit=None, marker="+", noData = False,
+             order = 1, alpha_ci = None, period=None, 
+             alphap = 0.0, betap = 0.0,**kwargs ) :
     """
     Plot parametric distribution together with data
     """
 
     from matplotlib import pyplot as plt
+    
     if ax is None:
         fig, ax = plt.subplots()
     n = len(data)
-    prob = probN(n)
+    
+    prob = probN(n, alphap = alphap , betap = betap)
 
     if period is not None:
         conv = 3600. / period  #Convert from probability to events rate
@@ -105,4 +153,5 @@ def distPlot(data, frozenDist=None, ax=None, label=None, labelFit=None, marker="
     if label is not None or labelFit is not None :
         ax.legend()
     ax.grid(True)
+
     return ax
