@@ -569,7 +569,9 @@ def getAutoCorrelation( se ):
 
 
 def getMotionAtPoint( motionDf, start_point, end_point, angleUnit  ) :
-    """
+    """Change reference point (linear rigid body!)
+    
+    
     Parameters
     ----------
     motionDf : pd.DataFrame

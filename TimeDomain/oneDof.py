@@ -34,8 +34,9 @@ Linear damping : {:.2f} ( = {:.2f} Bcr)
 
         return str_
 
-    def deriv(self, t , y, f_ex = lambda x: 0):
-        return np.array([ y[1] , (-self.bl*y[1] - self.bq * y[1] * abs(y[1])  - self.k*y[0] + f_ex(t) ) / self.m ]  )
+    def deriv(self, t , y, f_ex = lambda x, y: 0):
+        return np.array( [ y[1] , (-self.bl*y[1] - self.bq * y[1] * abs(y[1])  - self.k*y[0] + f_ex(t,y) ) / self.m ]  )
+
 
     def decay(self , tMin , tMax , X0 , t_eval = None ):
         """
@@ -68,5 +69,5 @@ if __name__ == "__main__" :
     res = oneDof.decay(tMin=0.0, tMax=100.0, X0=np.array([10.0, 0.]) , t_eval = np.arange(0,100,0.1))
     res.plot()
 
-    res2 = oneDof.forcedMotion(tMin=0.0, tMax=100.0, X0=np.array([10.0, 0.]) , t_eval = np.arange(0,100,0.1), f_ex = lambda x : x)
+    res2 = oneDof.forcedMotion(tMin=0.0, tMax=100.0, X0=np.array([10.0, 0.]) , t_eval = np.arange(0,100,0.1), f_ex = lambda x,y : x)
     res2.plot()

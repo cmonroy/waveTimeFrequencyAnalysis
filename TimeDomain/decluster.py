@@ -58,7 +58,7 @@ class Decluster( object ) :
 
         
     @property   
-    def excedance(self):
+    def exceedance(self):
         return self.declustered - self.threshold
 
     @property
@@ -117,6 +117,9 @@ class Decluster( object ) :
         ax.hlines( self.threshold, xmin = self.se.index.min() , xmax = self.se.index.max() )
         return ax
     
+    
+    def duration(self):
+        return self.se.index[-1] - self.se.index[0]
     
 
 def minSpacingFilter(se , spacing) :
