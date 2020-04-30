@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import rayleigh
+from matplotlib import pyplot as plt
+from droppy.pyplotTools.statPlots import distPlot
 
 def getUpCrossID( array, threshold ) :
     """Get the upcrossing indices
@@ -127,7 +130,6 @@ def getUpCrossDist(upCrossDf) :
     df = pd.DataFrame(index=p_ex,columns=['Minimum','Maximum'])
     df.Minimum = upCrossDf.Minimum.sort_values(ascending=True).values
     df.Maximum = upCrossDf.Maximum.sort_values(ascending=False).values
-    
     return df
 
 def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
@@ -163,3 +165,116 @@ def plotUpCrossDist( upCrossDist , ax = None, label=None):
     if label is not None: ax.legend()
     return ax
 
+
+
+
+class UpCrossAnalysis( pd.DataFrame ):
+    """
+    
+    Object-oriented interface to upcrossing analysis
+    
+    """
+    
+    def __init__(self, *args, **kwargs) : 
+        pd.DataFrame.__init__(self, *args, **kwargs)
+        self.se = None
+        
+
+    @property
+    def _constructor(self):
+        return UpCrossAnalysis
+
+
+    @classmethod
+    def Merge( cls, listUpCross ):
+        return UpCrossAnalysis( pd.concat( listUpCross ).reset_index() )
+
+
+    @classmethod
+    def FromTs( cls, se, threshold = "mean"):
+        """
+        
+        Parameters
+        ----------
+        se : pd.Series
+            Time trace to analyse
+        threshold : flaot, optional
+            upcrossing threshold. The default is "mean".
+
+        Returns
+        -------
+        res : UpCrossing analysis
+            Up-crossing data
+
+        """
+        res = cls(upCrossMinMax( se, threshold = threshold ))
+        res.se = se        
+        return res
+    
+    def plot(self , ax = None, **kwargs):
+        """Plot time series together with maximum, minimum and cycle bounds
+        """
+        ax = plotUpCross( self, ax=ax,  **kwargs )
+        if self.se is not None :
+            self.se.plot(ax=ax)
+        return ax
+        
+
+    def plotDistribution( self, ax = None, data = "Maximum", addRayleigh = None, **kwargs ):
+        """Plot upcrossing distribution
+        
+        Parameters
+        ----------
+        ax : TYPE, optional
+            DESCRIPTION. The default is None.
+        data : TYPE, optional
+            DESCRIPTION. The default is "Maximum".
+        addRayleigh : None, float or "auto", optional
+            Plot Rayleight distribution
+            addRayleigh == "auto" : standard deviation calculated from time series
+            addRayleigh == float : standard deviation given
+            addRayleigh == None : Do not plot
+            The default is None.
+
+        Returns
+        -------
+        ax : TYPE
+            DESCRIPTION.
+
+        """
+        
+        if ax == None : 
+            fig, ax = plt.subplots()
+            
+        
+        if addRayleigh is not None : 
+            if addRayleigh == "auto":
+                addRayleigh = rayleigh(0.0,  scale = self.se.std() )
+            else :     
+                addRayleigh = rayleigh(0.0,  scale = addRayleigh )
+            
+        
+        distPlot( data = self.loc[: , data].values,
+                  frozenDist = addRayleigh,
+                  ax=ax, 
+                  **kwargs
+                  )
+ 
+      
+        
+        return ax 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        
+        
+        
