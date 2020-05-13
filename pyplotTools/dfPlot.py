@@ -318,7 +318,8 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
 
     from matplotlib import animation
 
-    logger.info("Making animation file : "+ movieName)
+    if movieName is not None : 
+        logger.info("Making animation file : " + movieName)
 
     global pause
     pause = False

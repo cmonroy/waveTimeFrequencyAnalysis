@@ -1,5 +1,5 @@
-
 import itertools
+import numpy as np
 colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
 def newColorIterator() :
     return itertools.cycle(colorCycle)
@@ -14,6 +14,15 @@ linestyleCycle = ('-', '--', '-.', ':')
 def newLinestyleIterator() :
     return itertools.cycle(linestyleCycle)
 
+
+def getAngleColorMap( unit = "rad", cmap = "twilight" ):
+    import matplotlib.colors as colors
+    import matplotlib.cm as cm
+    cNorm  = colors.Normalize( vmin=0, vmax=np.pi * 2)
+    scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cmap)
+    return scalarMap
+
+    
 
 def pyplotLegend(plt=None,ax=None):
     if plt is not None :

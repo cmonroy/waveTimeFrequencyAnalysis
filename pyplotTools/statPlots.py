@@ -151,7 +151,7 @@ def distPlot(data, frozenDist=None, ax=None,
     else :
         ax.set_ylabel("Events rate (n / hour)" )
     if label is not None or labelFit is not None :
-        ax.legend()
+        ax.legend( loc = 1 )
     ax.grid(True)
 
     return ax
