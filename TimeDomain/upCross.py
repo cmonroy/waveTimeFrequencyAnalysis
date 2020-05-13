@@ -4,6 +4,124 @@ from scipy.stats import rayleigh
 from matplotlib import pyplot as plt
 from droppy.pyplotTools.statPlots import distPlot
 
+
+
+
+class UpCrossAnalysis( pd.DataFrame ):
+    """
+    
+    Object-oriented interface to upcrossing analysis
+    
+    """
+    
+    def __init__(self, *args, **kwargs) : 
+        pd.DataFrame.__init__(self, *args, **kwargs)
+        self.se = None
+        
+    @property
+    def _constructor(self):
+        return UpCrossAnalysis
+
+    @classmethod
+    def Merge( cls, listUpCross ):
+        """
+        Merge several upcrossing analysis
+
+        Parameters
+        ----------
+        listUpCross : list of upCrossing anlysis
+            list of upCrossing anlysis
+
+        Returns
+        -------
+        UpCrossAnalysis
+            Merged data.
+
+        """
+        return UpCrossAnalysis( pd.concat( listUpCross ).reset_index() )
+
+
+    @classmethod
+    def FromTs( cls, se, threshold = "mean", method = "upcross"):
+        """
+        
+        Parameters
+        ----------
+        se : pd.Series
+            Time trace to analyse
+        threshold : flaot, optional
+            upcrossing threshold. The default is "mean".
+
+        Returns
+        -------
+        res : UpCrossing analysis
+            Up-crossing data
+
+        """
+        
+        if method.lower() == "upcross" : 
+            res = cls(upCrossMinMax( se, threshold = threshold ))
+        elif method.lower() == "updown" : 
+            res = cls(peaksMax( se, threshold = threshold ))
+        else : 
+            raise(Exception(f"method '{method:}' not available"))
+
+        res.se = se        
+        return res
+    
+    def plot(self , ax = None, **kwargs):
+        """Plot time series together with maximum, minimum and cycle bounds
+        """
+        ax = plotUpCross( self, ax=ax,  **kwargs )
+        if self.se is not None :
+            self.se.plot(ax=ax)
+        return ax
+        
+
+    def plotDistribution( self, ax = None, data = "Maximum", addRayleigh = None, **kwargs ):
+        """Plot upcrossing distribution
+        
+        Parameters
+        ----------
+        ax : TYPE, optional
+            DESCRIPTION. The default is None.
+        data : TYPE, optional
+            DESCRIPTION. The default is "Maximum".
+        addRayleigh : None, float or "auto", optional
+            Plot Rayleight distribution
+            addRayleigh == "auto" : standard deviation calculated from time series
+            addRayleigh == float : standard deviation given
+            addRayleigh == None : Do not plot
+            The default is None.
+
+        Returns
+        -------
+        ax : TYPE
+            DESCRIPTION.
+
+        """
+        
+        if ax == None : 
+            fig, ax = plt.subplots()
+            
+        
+        if addRayleigh is not None : 
+            if addRayleigh == "auto":
+                addRayleigh = rayleigh(0.0,  scale = self.se.std() )
+            else :     
+                addRayleigh = rayleigh(0.0,  scale = addRayleigh )
+            
+        distPlot( data = self.loc[: , data].values,
+                  frozenDist = addRayleigh,
+                  ax=ax, 
+                  **kwargs
+                  )
+        
+        return ax 
+    
+
+
+
 def getUpCrossID( array, threshold ) :
     """Get the upcrossing indices
 
@@ -33,9 +151,9 @@ def getDownCrossID( array, threshold ) :
 
 
 
+
 def getPeaksBounds(se, threshold):
     """Get peaks, identified by the up and down crossing of a threshold
-
     """
     array = se.values
     up_ = getUpCrossID( array, threshold )
@@ -60,11 +178,12 @@ def peaksMax( se, threshold ) :
      maxIndex = np.empty( up_.shape , dtype = int )  
 
      for i in range(len( up_ )) : 
-         maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i] ].argmax()
+         maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i]+1 ].argmax()
      
      return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] , 
                                    "MaximumTime" : se.index[ maxIndex ] ,
-                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ]   } )
+                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ], 
+                                   "Period" : se.index[ down_ ] - se.index[ up_ ]} )
      
 
 
@@ -139,15 +258,18 @@ def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
     from matplotlib import pyplot as plt
     if ax is None : fig , ax = plt.subplots()
     if cycleLimits :
-        max_ = upCrossDf.Maximum.max()
-        min_ = upCrossDf.Minimum.min()
         for i in range(len(upCrossDf)) :
-            ax.plot( [upCrossDf.upCrossTime[i], upCrossDf.upCrossTime[i]] , [min_, max_]  , "--" , label = None )
-    else :
-        ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label = "Cycle bounds" )
-    ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
-    ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "Min", color ="r")
+            ax.axvline( x = upCrossDf.upCrossTime[i] , label = None , alpha = 0.3)
+            ax.axvline( x = upCrossDf.upCrossTime[i] + upCrossDf.Period[i] , label = None, alpha = 0.3)
+    # else :
+    #     ax.plot( upCrossDf.upCrossTime , [0. for i in range(len(upCrossDf))]  , "+" , label =  )
+    #     ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
+
     ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "Max", color ="b")
+    
+    if "MinimumTime" in upCrossDf.columns : 
+        ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "Min", color ="r")
+    
     ax.legend(loc = 2)
     return ax
 
@@ -168,102 +290,6 @@ def plotUpCrossDist( upCrossDist , ax = None, label=None):
 
 
 
-class UpCrossAnalysis( pd.DataFrame ):
-    """
-    
-    Object-oriented interface to upcrossing analysis
-    
-    """
-    
-    def __init__(self, *args, **kwargs) : 
-        pd.DataFrame.__init__(self, *args, **kwargs)
-        self.se = None
-        
-
-    @property
-    def _constructor(self):
-        return UpCrossAnalysis
-
-
-    @classmethod
-    def Merge( cls, listUpCross ):
-        return UpCrossAnalysis( pd.concat( listUpCross ).reset_index() )
-
-
-    @classmethod
-    def FromTs( cls, se, threshold = "mean"):
-        """
-        
-        Parameters
-        ----------
-        se : pd.Series
-            Time trace to analyse
-        threshold : flaot, optional
-            upcrossing threshold. The default is "mean".
-
-        Returns
-        -------
-        res : UpCrossing analysis
-            Up-crossing data
-
-        """
-        res = cls(upCrossMinMax( se, threshold = threshold ))
-        res.se = se        
-        return res
-    
-    def plot(self , ax = None, **kwargs):
-        """Plot time series together with maximum, minimum and cycle bounds
-        """
-        ax = plotUpCross( self, ax=ax,  **kwargs )
-        if self.se is not None :
-            self.se.plot(ax=ax)
-        return ax
-        
-
-    def plotDistribution( self, ax = None, data = "Maximum", addRayleigh = None, **kwargs ):
-        """Plot upcrossing distribution
-        
-        Parameters
-        ----------
-        ax : TYPE, optional
-            DESCRIPTION. The default is None.
-        data : TYPE, optional
-            DESCRIPTION. The default is "Maximum".
-        addRayleigh : None, float or "auto", optional
-            Plot Rayleight distribution
-            addRayleigh == "auto" : standard deviation calculated from time series
-            addRayleigh == float : standard deviation given
-            addRayleigh == None : Do not plot
-            The default is None.
-
-        Returns
-        -------
-        ax : TYPE
-            DESCRIPTION.
-
-        """
-        
-        if ax == None : 
-            fig, ax = plt.subplots()
-            
-        
-        if addRayleigh is not None : 
-            if addRayleigh == "auto":
-                addRayleigh = rayleigh(0.0,  scale = self.se.std() )
-            else :     
-                addRayleigh = rayleigh(0.0,  scale = addRayleigh )
-            
-        
-        distPlot( data = self.loc[: , data].values,
-                  frozenDist = addRayleigh,
-                  ax=ax, 
-                  **kwargs
-                  )
- 
-      
-        
-        return ax 
-    
     
     
     
