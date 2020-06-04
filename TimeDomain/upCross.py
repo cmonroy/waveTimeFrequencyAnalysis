@@ -69,10 +69,14 @@ class UpCrossAnalysis( pd.DataFrame ):
         res.se = se        
         return res
     
-    def plot(self , ax = None, **kwargs):
+    def plotTime(self , ax = None, **kwargs):
         """Plot time series together with maximum, minimum and cycle bounds
         """
-        ax = plotUpCross( self, ax=ax,  **kwargs )
+        if ax is None : 
+            fig, ax = plt.subplots()
+        
+        if len(self) > 0 : 
+            plotUpCross( self, ax=ax,  **kwargs )
         if self.se is not None :
             self.se.plot(ax=ax)
         return ax
@@ -118,7 +122,29 @@ class UpCrossAnalysis( pd.DataFrame ):
                   )
         
         return ax 
-    
+
+
+    def mapInCycle( self , se,  name = "target", fun = np.max ):
+        """Map maxima from other time series on current cycles
+
+        Parameters
+        ----------
+        se : TYPE
+            DESCRIPTION.
+        name : TYPE, optional
+            DESCRIPTION. The default is "target".
+        fun : TYPE, optional
+            DESCRIPTION. The default is np.max.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.loc[: , name] = np.nan
+        for i, row in self.iterrows() : 
+            self.loc[i , name]  = fun( se.loc[ row.upCrossTime : row.upCrossTime + row.Period  ].values )
+        return 
 
 
 
