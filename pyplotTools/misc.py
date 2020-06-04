@@ -15,14 +15,21 @@ def newLinestyleIterator() :
     return itertools.cycle(linestyleCycle)
 
 
-def getAngleColorMap( unit = "rad", cmap = "twilight" ):
+def getAngleColorMappable( unit = "rad", cmap = "twilight" ):
+    if "rad" in unit.lower() :
+        vmax = 2*np.pi
+    else :
+        vmax = 360.
+    return getColorMap( vmin = 0.0 , vmax = vmax , cmap = cmap )
+
+
+def getColorMappable( vmin, vmax, cmap = "viridis" ):
     import matplotlib.colors as colors
     import matplotlib.cm as cm
-    cNorm  = colors.Normalize( vmin=0, vmax=np.pi * 2)
+    cNorm  = colors.Normalize( vmin=vmin, vmax=vmax)
     scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cmap)
     return scalarMap
 
-    
 
 def pyplotLegend(plt=None,ax=None):
     if plt is not None :

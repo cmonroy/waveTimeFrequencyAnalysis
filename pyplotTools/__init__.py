@@ -1,7 +1,7 @@
 from .dfPlot import dfSlider, dfAnimate, dfSurface, dfIsoContour
 from .misc import newColorIterator, markerCycle, newMarkerIterator, linestyleCycle
 from .misc import newLinestyleIterator, pyplotLegend, autoscale_xy, uniqueLegend
-from .misc import getAngleColorMap
+from .misc import getColorMappable, getAngleColorMappable
 from .surfacePlot import mapFunction
 from ._scatterPlot import kde_scatter, density_scatter, scatterPlot, add_linregress
 from .mplZoom import ZoomPan
