@@ -16,7 +16,10 @@ from matplotlib import pyplot as plt
 from .. import pyplotTools
 from droppy import logger
 from datetime import datetime
-
+from scipy import signal
+    
+    
+    
 def scal_ramp(time, tStart, tEnd):
     time = time - tStart
     duration = tEnd - tStart
@@ -190,20 +193,47 @@ def getRAO( df, cols=None, *args, **kwargs ):
 
 
 
-def fftDf(df, part=None, index="Hz"):
+def fftDf(df, part=None, index="Hz", windows = None):
+    """
+    
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    part : TYPE, optional
+        DESCRIPTION. The default is None.
+    index : TYPE, optional
+        DESCRIPTION. The default is "Hz".
+    windows : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+
     # Handle series or DataFrame
     if type(df) == pd.Series:
         df = pd.DataFrame(df)
         ise = True
     else:
         ise = False
-    res = pd.DataFrame(index=np.fft.rfftfreq(df.index.size, d=dx(df)))
+
+    df_ = df.copy(deep = True)
+    if windows is not None:
+        for c in df_.columns : 
+            df_.values[:,c] *=  signal.windows.get_window( ( "tukey" , int( windows / dx(df)) ) , len(df) )
+        
+    res = pd.DataFrame(index=np.fft.rfftfreq(df.index.size, d=dx(df_)))
     for col in df.columns:
-        res[col] = np.fft.rfft(df[col])
+        res[col] = np.fft.rfft(df_[col])
         if part is not None:
             res[col] = part(res[col])
 
-    res /= (0.5 * df.index.size)
+    res /= (0.5 * df_.index.size)
     res.loc[0, :] *= 0.5
 
     if index == "Hz":
