@@ -76,10 +76,10 @@ def bvWriter_h5(filename, xAxis , data, labels, datasetName = "Data", compressio
         f.create_dataset( datasetName, data = data,  dtype=dtype, compression=compression,  chunks=chunks)
 
         #Set dimension scale
-        f[datasetName].dims.create_scale(f["Time"], "Time")
+        f["Time"].make_scale("Time")
         f[datasetName].dims[0].attach_scale(f["Time"])
 
-        f[datasetName].dims.create_scale(f["Channel"], "Channel")
+        f["Channel"].make_scale("Channel")
         f[datasetName].dims[1].attach_scale(f["Channel"])
 
 
