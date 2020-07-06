@@ -8,7 +8,7 @@ import pandas as pd
 
 class DecayAnalysis(object):
 
-    def __init__(self, se, method="maxmoy", w_filter = None  ):
+    def __init__(self, se, method="maxmoy", w_filter = None , n_cycle = None ):
 
         self.se = se
         # Read the mcnSolve test time serie
@@ -17,6 +17,8 @@ class DecayAnalysis(object):
 
         #Method
         self.method = method
+
+        self.n_cycle = n_cycle
 
         #To be filled
         self.coef = None
@@ -29,20 +31,27 @@ class DecayAnalysis(object):
 
     def _smooth(self, w_filter):
         from droppy.TimeDomain import bandPass
-        self.se = bandPass( self.se, fmin=0, fmax = w_filter, unit ="rad/s" )
+        self.se = bandPass( self.se, fmin=None, fmax = w_filter, unit ="rad/s" )
         self.motion = self.se.values
 
     def _getExtrema(self):
         """
         Get local extrema. require a smooth signal.
         """
-        from droppy.TimeDomain import upCrossMinMax
-        upCross = upCrossMinMax( self.se )
+        from droppy.TimeDomain import UpCrossAnalysis
+        self.upCross = UpCrossAnalysis.FromTs( self.se , threshold = 0.0)
+        
+        #Remove max before maximum (and dismiss this 1st max)
+        self.upCross = self.upCross.loc[ self.upCross.MaximumTime > self.upCross.MaximumTime.loc[self.upCross.Maximum.idxmax()] , :  ].reset_index()
+        
+        if self.n_cycle is not None : 
+            self.upCross = self.upCross.iloc[:self.n_cycle]
+        
 
-        self.maxTime = upCross.MaximumTime
-        self.maxVal = upCross.Maximum
-        self.minTime = upCross.MinimumTime
-        self.minVal = upCross.Minimum
+        self.maxTime = self.upCross.MaximumTime
+        self.maxVal = self.upCross.Maximum
+        self.minTime = self.upCross.MinimumTime
+        self.minVal = self.upCross.Minimum
 
 
     def getPeriod(self, n=5):

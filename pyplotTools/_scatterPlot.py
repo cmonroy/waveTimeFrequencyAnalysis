@@ -25,7 +25,7 @@ def scatterPlot(df , x, y , ax = None, x_y = False , title = None, meanCov = Non
     _x = df.loc[:,x]
     _y = df.loc[:,y]
 
-    displayMeanCov(df,x,y,meanCov,ax)
+    displayMeanCov( x,y,meanCov,ax)
 
     if x_y is True :
         add_x_y(_x,_y,ax)
@@ -158,17 +158,17 @@ def add_linregress( x, y, ax, text = True ):
   
 
 
-def displayMeanCov(df,x,y, meanCov,ax):
+def displayMeanCov(x,y, meanCov,ax):
     if meanCov is not None :
         if meanCov is True:
-            mean = np.mean((df.loc[:,y] / df.loc[:,x]))
-            cov = np.std((df.loc[:,y] / df.loc[:,x])) / mean
+            mean = np.mean((y / x))
+            cov = np.std((y / x)) / mean
             mean -= 1.
             ax.text( 0.8 , 0.2 ,  "mean : {:.1%}\nCOV : {:.1%}".format(mean , cov) , transform=ax.transAxes ) # verticalalignment='center'
 
         elif meanCov == "abs_mean_std" :
-            mean = np.mean((df.loc[:,y] - df.loc[:,x]))
-            std = np.std((df.loc[:,y] - df.loc[:,x]))
+            mean = np.mean((y - x))
+            std = np.std((y - x))
             ax.text( 0.8 , 0.2 ,  "mean : {:.2f}\nSTD : {:.2f}".format(mean , std) , transform=ax.transAxes ) # verticalalignment='center'
             
 
