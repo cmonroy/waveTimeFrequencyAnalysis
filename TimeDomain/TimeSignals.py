@@ -20,16 +20,82 @@ from scipy import signal
     
     
     
+    
+def ramp( ratio ):
+    """Ramp from 0. to 1.0
+
+    Parameters
+    ----------
+    ratio : float
+        Position in the ramp, between 0 and 1. (0=>0, 1=>1.).
+
+    Returns
+    -------
+    float
+        ramp
+
+    """
+    return 10. * ratio**3 - 15. * ratio**4 + 6. * ratio**5
+    
 def scal_ramp(time, tStart, tEnd):
+    """Return the factor to apply to ramp a signal between tStart and tEnd.
+
+    Parameters
+    ----------
+    time : float
+        Time
+    tStart : float
+        Where the ramp starts
+    tEnd : float
+        Where the ramp ends
+
+    Returns
+    -------
+    float
+        Factor to use to ramp the signal.
+
+    """
+    
     time = time - tStart
     duration = tEnd - tStart
     if time > duration:
         return 1.
     else:
-        return 10. * (time / duration)**3 - 15. * (time / duration)**4 + 6. * (time / duration)**5
+        return ramp(time / duration)
+    
+ramp_v = np.vectorize(scal_ramp)    
 
+def scal_window(time, rampTime):
+    """
+    Parameters
+    ----------
+    time : np.ndarray
+        Index vector
+    rampTime : float
+        Ramp to be applied on both side of the signal
 
-ramp_v = np.vectorize(scal_ramp)
+    Returns
+    -------
+    res : np.ndarray
+        Factor to use to window the signal.
+
+    Example 
+    -------
+    scal_window( np.linspace( 0,5,6 ), 2.)
+    >>> array([0. , 0.5, 1. , 1. , 0.5, 0. ])        
+
+    """
+    tStart = time[0]
+    tEnd = time[-1]
+    
+    res = np.ones( time.shape , dtype = float )
+    startid = np.where( time < tStart + rampTime ) 
+    res[startid] = ramp( (time[ startid ]-tStart) / rampTime   )
+    
+    endid = np.where( time > tEnd - rampTime ) 
+    res[endid] = ramp( ( ( tEnd - time[ endid ] ) / rampTime ) )
+    return res
+
 
 
 def rampDf(df, rStart, rEnd):
@@ -39,6 +105,41 @@ def rampDf(df, rStart, rEnd):
         df[c][:] *= a[:]
     return df
 
+
+def getWindowed( df, rampSize ) :
+    """Return windowed signal
+    Handles both Pandas series and DataFrame
+
+    Parameters
+    ----------
+    df : pd.DataFrame or pd.Series
+        Signal to be windowed
+    rampSize : float
+        Ramp size to apply on both side
+
+    Returns
+    -------
+    pd.Series or pd.DataFrame
+        Windowed signal
+
+    """
+    
+    if type(df) == pd.Series:
+        df = pd.DataFrame(df)
+        ise = True
+    else:
+        ise = False
+
+    df_ = df.copy(deep = True)
+    if rampSize is not None:
+        for c in range(len(df_.columns)) : 
+            df_.iloc[:,c] *=  scal_window( df_.index, rampSize  )
+    if ise:
+        return df_.iloc[:, 0]
+    else:
+        return df_
+    
+    
 
 def fillCos(A=1.0, T=10., tMin=0., tMax=50., n=200):
     """ for testing purpose, fill signal with a cosine """
@@ -80,17 +181,65 @@ def dx(df):
         T = (df.index[-1] - df.index[0])
     return T/(len(df.index)-1)
 
-def slidingFFT(se, T,  n=1, tStart=None, preSample=False, nHarmo=5, kind=abs, phase=None):
+
+def getZeroPadded(se , tmin = None, tmax = None):
+    """Zero pad a signal. 
+    
+
+    Parameters
+    ----------
+    se : pd.Series
+        Series to zero pad
+    tmin : float, optional
+        Minimum value for zero padding. The default is None.
+    tmax : float, optional
+        Maximum value for zero padding. The default is None.
+
+    Returns
+    -------
+    zp : pd.Series
+        Zero padded signal
+        
     """
-    Harmonic analysis on a sliding windows
-    se : Series to analyse
-    T : Period
-    tStart : start _xAxis
-    n : size of the sliding windows in period.
-    reSample : reSample the signal so that a period correspond to a integer number of time step
-    nHarmo : number of harmonics to return
-    kind : module, real,  imaginary part, as a function (abs, np.imag, np.real ...)
-    phase : phase shift (for instance to extract in-phase with cos or sin)
+    dx_ = dx(se)
+    zp = se.copy()
+    if tmax is not None : 
+        added = np.arange( zp.index[-1] + dx_ ,tmax + dx_ , dx_)
+        zp = pd.Series( index = np.concatenate( [zp.index ,  added] ) ,
+                        data =  np.concatenate( [zp.values , np.zeros( added.shape , dtype = float) ] ) )
+    if tmin is not None:
+        added = np.arange( tmin, zp.index[0] - dx_ , dx_)
+        zp = pd.Series( index = np.concatenate( [added ,  zp.index] ) ,
+                        data =  np.concatenate( [np.zeros( added.shape , dtype = float) , zp.values  ] ) )
+    return zp
+
+
+def slidingFFT(se, T,  n=1, tStart=None, preSample=False, nHarmo=5, kind=abs, phase=None):
+    """Harmonic analysis on a sliding windows
+
+    Parameters
+    ----------
+    se : pd.Series
+        Series to analyse
+    T : float
+        Period
+    n : integer, optional
+        size of the sliding windows in period. The default is 1.
+    tStart : float, optional
+        Starting index for the analysis. The default is None.
+    reSample : bool, optional
+        If True the signal is re-sampled so that a period correspond to a integer number of time steps. The default is False.
+    nHarmo : float, optional
+        number of harmonics to return. The default is 5.
+    kind : fun, optional
+        module, real,  imaginary part, as a function (abs, np.imag, np.real ...). The default is abs.
+    phase : float, optional
+        phase shift (for instance to extract in-phase with cos or sin). The default is None.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the harmonics, function of time.
     """
 
     if (type(se) == pd.DataFrame):
@@ -123,6 +272,34 @@ def slidingFFT(se, T,  n=1, tStart=None, preSample=False, nHarmo=5, kind=abs, ph
 
 def getPSD(df, dw=0.05, roverlap=0.5, window='hanning', detrend='constant', unit="rad"):
     """Compute the power spectral density
+    
+    Parameters
+    ----------
+    df : pd.DataFrame or pd.Series
+        Signal to analyze.
+    dw : float, optional
+        Frequency step (smoothing). The default is 0.05.
+    roverlap : float, optional
+        Overlapping of Welch segment. The default is 0.5.
+    window : str or tuple. optional
+        Desired window to use. It is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. 
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'..
+    unit : str, optional
+        Frequency unit for spectrum. The default is "rad".
+
+    Returns
+    -------
+    pd.Series of pd.DataFrame
+        PSD, frequency being the index.
+
     """
     from scipy.signal import welch
 
@@ -224,8 +401,8 @@ def fftDf(df, part=None, index="Hz", windows = None):
 
     df_ = df.copy(deep = True)
     if windows is not None:
-        for c in df_.columns : 
-            df_.values[:,c] *=  signal.windows.get_window( ( "tukey" , int( windows / dx(df)) ) , len(df) )
+        for c in range(len(df_.columns)) : 
+            df_.iloc[:,c] *=  signal.windows.get_window( ( "tukey" , int( windows / dx(df)) ) , len(df) )
         
     res = pd.DataFrame(index=np.fft.rfftfreq(df.index.size, d=dx(df_)))
     for col in df.columns:

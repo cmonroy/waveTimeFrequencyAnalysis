@@ -50,6 +50,8 @@ def approx_jacobian_n(x, func, epsilon, fx = None, nproc=1, *args):
         p = Pool(nproc)
         for i, res in enumerate(p.map( partial( jac_i, func = func, x0=x0, f0=f0, epsilon=epsilon,*args) , list(range(n))  )) :
             jac[i] = res
+        p.close()  
+        p.join()  
     else :
         dx = np.zeros(len(x0))
         for i in range(len(x0)):
