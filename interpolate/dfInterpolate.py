@@ -79,9 +79,14 @@ def interpDf( df , newIndex=None,  newColumns=None, kind=['linear','linear'], **
     
     if newIndex is not None:
         newData = {}
+        #Deal with datetime index
+        if isinstance(ndf.index,pd.DatetimeIndex): oldIndexF = ndf.index.values.astype(float)
+        else: oldIndexF = ndf.index
+        if isinstance(newIndex,pd.DatetimeIndex): newIndexF = newIndex.values.astype(float)
+        else: newIndexF = newIndex
         for col in ndf.columns :
-            f = InterpolateSpline( ndf.index , ndf[col], kind=kind[0], **kwargs )
-            newData[col] =   f( newIndex )
+            f = InterpolateSpline( oldIndexF , ndf[col], kind=kind[0], **kwargs )
+            newData[col] =   f( newIndexF )
         ndf = pd.DataFrame(index = newIndex, data = newData)
    
     if newColumns is not None:
