@@ -49,7 +49,7 @@ class UpCrossAnalysis( pd.DataFrame ):
         ----------
         se : pd.Series
             Time trace to analyse
-        threshold : flaot, optional
+        threshold : float, optional
             upcrossing threshold. The default is "mean".
 
         Returns
