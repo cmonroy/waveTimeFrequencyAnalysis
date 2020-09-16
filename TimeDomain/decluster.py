@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from droppy.TimeDomain import UpCrossAnalysis
+from scipy.optimize import brentq
+from droppy import logger
 
 class Decluster( object ) :
 
@@ -21,11 +23,31 @@ class Decluster( object ) :
 
         """
 
-        self.se = se
+        self.se = se.astype("float64")
         self.threshold = threshold
         self.method = method
         self.minSpacing = minSpacing
         self._declustered = None
+
+
+
+    @classmethod
+    def From_Threshold_RP( cls, se, RP, **kwargs ):
+        """
+        Parameters
+        ----------
+        se : pd.Seris
+            Time series to decluster. Index is time.
+        N : float
+            Return period of the theshold
+        method : str, optional
+            Way to decluster. The default is "upcross".
+        minSpacing : str, se.index.dtype.type
+            Minimum spacing between maxima. The default is None.
+
+        """
+        N =  (se.index[-1] - se.index[0] ) / RP
+        return cls.From_Threshold_N( se, N, **kwargs)
 
 
     @classmethod
@@ -50,12 +72,9 @@ class Decluster( object ) :
             res = len(peaks.declustered) - N
             return res
 
-        from scipy.optimize import brentq
         threshold = brentq( target, se.mean() , se.max()  , xtol = 0.001  )
 
         return cls( se=se , threshold = threshold , **kwargs)
-
-
 
     @property
     def exceedance(self):
@@ -69,7 +88,27 @@ class Decluster( object ) :
 
     @property
     def n_exceedance(self):
+        #Number of cluster
+        logger.warning( "Use n_c instead of n_exceedance now" )
         return len (self.declustered)
+
+    @property
+    def n_c(self):
+        #Number of cluster
+        return len(self.declustered)
+
+
+
+    def n_c_u(self , unit):
+        #Return number of cluster per unit of time
+        return self.n_c * unit /  self.duration()
+
+
+    @property
+    def n_u(self) :
+        #Numbez of event above threshold (all event from each cluster are accouted)
+        return np.sum( self.se > self.threshold )
+
 
 
     def _do_declustering(self ) :
@@ -126,6 +165,18 @@ class Decluster( object ) :
         return self.se.index[-1] - self.se.index[0]
 
 
+    def getIntervals(self):
+        """Get time to threshold exceedance
+
+        Returns
+        -------
+        np.ndarray
+            Time to failure (interval + 1st time of first max).
+
+        """
+        return np.insert(  np.diff( self.exceedance.index ) , 0 , self.exceedance.index[0] - self.se.index[0] )
+
+
 def minSpacingFilter(se , spacing) :
     """ Remove maxima with small spacing
 
@@ -169,7 +220,7 @@ if __name__ == "__main__" :
 
     time = np.arange(0, 100, 0.5)
     se = pd.Series( index = time , data = np.cos(time) )
-    dec = Decluster( se, threshold = 0.5, minSpacing = 20, method = "updown")
-    test = peaksMax( se, 0.5)
+    dec = Decluster( se, threshold = 0.2, minSpacing = 0.2, method = "updown")
+    # test = peaksMax( se, 0.5)
     dec.plot()
 
