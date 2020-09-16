@@ -5,7 +5,7 @@ import os
 
 def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, swmr=True, swmr_trunc=None):
     """ Read BV HDF5 format
-    
+
     Parameters
     ----------
     filename : str
@@ -46,11 +46,12 @@ def bvReader_h5(filename, dataset = "Data", headerOnly = False, usecols=None, sw
             time = ds.dims[0][0][()]
             data = ds[()]
 
-    if ( swmr and (swmr_trunc is not False)) or (swmr_trunc is True) :
-        idx = max(np.nonzero(time)[0])  #find maximum non zero index
+
+    if (( swmr and (swmr_trunc is not False)) or (swmr_trunc is True)) and not headerOnly:
+        idx = max(np.nonzero(time)[0])  # Find maximum non zero index
         time = time[:idx+1]
         data = data[:idx+1,:]
-        
+
     if usecols is not None:
         useidx = [list(label).index(col) for col in usecols]
         return time, data[:,useidx], label[useidx]
