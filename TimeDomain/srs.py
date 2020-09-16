@@ -106,7 +106,10 @@ class ShockResponseSpectrum:
                                      columns = cols)
         srs_output_df.to_csv(filename,index=False)
 
-    def _make_accel_subplot(self,ax):
+    def _make_accel_subplot(self,ax = None):
+
+        if ax is not None  :
+            fig , ax = plt.subplots()
         ax.plot(self.input_time_s, self.input_accel_g,
                 label = 'Accel',
                 color = COLORS[0],
@@ -120,7 +123,9 @@ class ShockResponseSpectrum:
                       fontdict = AX_TITLE_FONT_DICT)
         return ax
 
-    def _make_vel_subplot(self,ax):
+    def _make_vel_subplot(self,ax=None):
+        if ax is not None  :
+            fig , ax = plt.subplots()
         ax.plot(self.input_time_s, self.input_vel_mps,
                 label='Vel',
                 color=COLORS[0],
@@ -134,7 +139,9 @@ class ShockResponseSpectrum:
                       fontdict=AX_TITLE_FONT_DICT)
         return ax
 
-    def _make_srs_subplot(self,ax, requirement):
+    def _make_srs_subplot(self,requirement, ax = None):
+        if ax is not None  :
+            fig , ax = plt.subplots()
 
         ax.loglog(self.fn_array,self.pos_accel,
                   label='Positive',
@@ -184,19 +191,19 @@ class ShockResponseSpectrum:
         if filename is not None:
             fig.savefig(filename,dpi=200)
 
-    def plot_input_accel(self, filename = None):
-        fig, ax = plt.subplots()
+    def plot_input_accel(self, ax = None):
+        if ax is None :
+            fig, ax = plt.subplots()
         ax = self._make_accel_subplot(ax)
         fig.set_size_inches(10,7)
-        if filename is not None:
-            fig.savefig(filename,dpi=200)
+        return ax
 
     def plot_input_vel(self, filename = None):
-        fig, ax = plt.subplots()
+        if ax is None :
+            fig, ax = plt.subplots()
         ax = self._make_vel_subplot(ax)
-        fig.set_size_inches(10,7)
-        if filename is not None:
-            fig.savefig(filename,dpi=200)
+        return ax
+
 
     def plot_srs(self, requirement = None, filename = None):
         fig, ax = plt.subplots()

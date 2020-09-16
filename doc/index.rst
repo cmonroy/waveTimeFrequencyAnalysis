@@ -8,9 +8,11 @@ Snoopy documentation
 ====================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    Tutorials/Tutorials.rst
+   
+   Modules/Modules.rst
 
 
 

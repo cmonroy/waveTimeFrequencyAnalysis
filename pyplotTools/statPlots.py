@@ -4,10 +4,10 @@ from scipy.stats import beta
 
 def probN( n, alphap = 0.0, betap = 0.0):
     """Return exceedance probability of the ranked data
-    
+
     (inverse of scipy.stats.mquantiles)
 
-    
+
     Parameters
     ----------
     n : int
@@ -117,18 +117,52 @@ def qqplot2(data_1, data_2, label_1=None, label_2=None, ax=None, x_y = True, mar
 
 def distPlot(data, frozenDist=None, ax=None,
              label=None, labelFit=None, marker="+", noData = False,
-             order = 1, alpha_ci = None, period=None, 
+             order = 1, alpha_ci = None, period=None,
              alphap = 0.0, betap = 0.0,**kwargs ) :
     """
     Plot parametric distribution together with data
-    """
 
+    Parameters
+    ----------
+    data : np.ndarray
+        Data points
+    frozenDist : scipy.stats.rv_continouse, optional
+        Analytical distribution to be plotted. The default is None.
+    ax : TYPE, optional
+        DESCRIPTION. The default is None.
+    label : TYPE, optional
+        DESCRIPTION. The default is None.
+    labelFit : TYPE, optional
+        DESCRIPTION. The default is None.
+    marker : TYPE, optional
+        DESCRIPTION. The default is "+".
+    noData : TYPE, optional
+        DESCRIPTION. The default is False.
+    order : TYPE, optional
+        DESCRIPTION. The default is 1.
+    alpha_ci : TYPE, optional
+        DESCRIPTION. The default is None.
+    period : float, optional
+        DESCRIPTION. The default is None.
+    alphap : TYPE, optional
+        DESCRIPTION. The default is 0.0.
+    betap : TYPE, optional
+        DESCRIPTION. The default is 0.0.
+    **kwargs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    ax : TYPE
+        DESCRIPTION.
+
+    """
     from matplotlib import pyplot as plt
-    
+
     if ax is None:
         fig, ax = plt.subplots()
     n = len(data)
-    
+
     prob = probN(n, alphap = alphap , betap = betap)
 
     if period is not None:
