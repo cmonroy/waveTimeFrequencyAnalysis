@@ -7,3 +7,4 @@ scipy>=1.4
 pandas>=1.0
 matplotlib>=3.0
 seaborn
+h5py
