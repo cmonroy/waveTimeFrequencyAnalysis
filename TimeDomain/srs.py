@@ -1,5 +1,5 @@
 """
-from https://github.com/dsholes/python-srs MIT license 
+from https://github.com/dsholes/python-srs MIT license
 very slightly modified
 """
 
@@ -93,7 +93,7 @@ class ShockResponseSpectrum:
             T = 2*np.pi*(m/k)**0.5
             interp = InterpolatedUnivariateSpline(self.input_time_s, -self.input_accel_g, ext = 1)
             tMax = max( self.input_time_s.max() , 2 * T)
-            resp = oneDof.forcedMotion( tMin = 0.0, tMax=tMax , X0 = [0,0], f_ex= interp, t_eval = np.arange(0,tMax, T/20) )
+            resp = oneDof.forcedMotion( tMin = 0.0, tMax=tMax , X0 = [0,0], f_ex= lambda t ,p : float(interp(t)), t_eval = np.arange(0,tMax, T/20) )
             self.pos_accel[i] = resp.max()
             self.neg_accel[i] = np.abs(resp.min())
         return pd.DataFrame( index = fn_array, data = {"POS" : self.pos_accel, "NEG" : self.neg_accel } )
