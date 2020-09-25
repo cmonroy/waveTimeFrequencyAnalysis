@@ -504,8 +504,8 @@ def bandPass(df, fmin=None, fmax=None, n=None, unit="Hz", method='scipy', butter
             samplingFrequency = 1./dx(df)
             nyquistFrequency = samplingFrequency / 2.
             if fmin[i] and fmax[i]:
-               fCutMin = (f1/0.802)/nyquistFrequency
-               fCutMax = (f2/0.802)/nyquistFrequency
+               fCutMin = (fmin[i]/0.802)/nyquistFrequency
+               fCutMax = (fmax[i]/0.802)/nyquistFrequency
                b, a = butter(butterOrder, [fCutMin, fCutMax], btype="bandpass")
             elif fmin[i]:
                  fCutMin = (fmin[i]/0.802)/nyquistFrequency
