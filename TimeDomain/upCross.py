@@ -8,24 +8,25 @@ from droppy.pyplotTools.statPlots import distPlot
 
 
 class UpCrossAnalysis( pd.DataFrame ):
+    """Object-oriented interface to upcrossing analysis.
+
     """
-    
-    Object-oriented interface to upcrossing analysis
-    
-    """
-    
-    def __init__(self, *args, **kwargs) : 
+
+    def __init__(self, *args, **kwargs) :
         pd.DataFrame.__init__(self, *args, **kwargs)
+
+        if "Maximum" not in self.columns :
+            raise(Exception( 'No "Maximum" in columns, UpCrossAnalysis.FromTs might be what you are looking for.'  ))
+
         self.se = None
-        
+
     @property
     def _constructor(self):
         return UpCrossAnalysis
 
     @classmethod
     def Merge( cls, listUpCross ):
-        """
-        Merge several upcrossing analysis
+        """Merge several upcrossing analysis.
 
         Parameters
         ----------
@@ -44,53 +45,55 @@ class UpCrossAnalysis( pd.DataFrame ):
     @classmethod
     def FromTs( cls, se, threshold = "mean", method = "upcross"):
         """
-        
+
         Parameters
         ----------
         se : pd.Series
             Time trace to analyse
-        threshold : flaot, optional
+        threshold : float, optional
             upcrossing threshold. The default is "mean".
 
         Returns
         -------
-        res : UpCrossing analysis
+        UpCrossAnalysis
             Up-crossing data
 
         """
-        
-        if method.lower() == "upcross" : 
+
+        if method.lower() == "upcross" :
             res = cls(upCrossMinMax( se, threshold = threshold ))
-        elif method.lower() == "updown" : 
+        elif method.lower() == "updown" :
             res = cls(peaksMax( se, threshold = threshold ))
-        else : 
+        else :
             raise(Exception(f"method '{method:}' not available"))
 
-        res.se = se        
+        res.se = se
         return res
-    
+
+
+
     def plotTime(self , ax = None, **kwargs):
         """Plot time series together with maximum, minimum and cycle bounds
         """
-        if ax is None : 
+        if ax is None :
             fig, ax = plt.subplots()
-        
-        if len(self) > 0 : 
+
+        if len(self) > 0 :
             plotUpCross( self, ax=ax,  **kwargs )
         if self.se is not None :
             self.se.plot(ax=ax)
         return ax
-        
+
 
     def plotDistribution( self, ax = None, data = "Maximum", addRayleigh = None, **kwargs ):
         """Plot upcrossing distribution
-        
+
         Parameters
         ----------
         ax : TYPE, optional
             DESCRIPTION. The default is None.
-        data : TYPE, optional
-            DESCRIPTION. The default is "Maximum".
+        data : str, optional
+            Columns to plot. The default is "Maximum".
         addRayleigh : None, float or "auto", optional
             Plot Rayleight distribution
             addRayleigh == "auto" : standard deviation calculated from time series
@@ -101,27 +104,26 @@ class UpCrossAnalysis( pd.DataFrame ):
         Returns
         -------
         ax : TYPE
-            DESCRIPTION.
-
+            The graph "ax".
         """
-        
-        if ax == None : 
+
+        if ax is None :
             fig, ax = plt.subplots()
-            
-        
-        if addRayleigh is not None : 
+
+
+        if addRayleigh is not None :
             if addRayleigh == "auto":
                 addRayleigh = rayleigh(0.0,  scale = self.se.std() )
-            else :     
+            else :
                 addRayleigh = rayleigh(0.0,  scale = addRayleigh )
-            
+
         distPlot( data = self.loc[: , data].values,
                   frozenDist = addRayleigh,
-                  ax=ax, 
+                  ax=ax,
                   **kwargs
                   )
-        
-        return ax 
+
+        return ax
 
 
     def mapInCycle( self , se,  name = "target", fun = np.max ):
@@ -129,11 +131,11 @@ class UpCrossAnalysis( pd.DataFrame ):
 
         Parameters
         ----------
-        se : TYPE
-            DESCRIPTION.
-        name : TYPE, optional
+        se : pd.Series
+            Series to map.
+        name : str, optional
             DESCRIPTION. The default is "target".
-        fun : TYPE, optional
+        fun : function, optional
             DESCRIPTION. The default is np.max.
 
         Returns
@@ -142,9 +144,9 @@ class UpCrossAnalysis( pd.DataFrame ):
 
         """
         self.loc[: , name] = np.nan
-        for i, row in self.iterrows() : 
+        for i, row in self.iterrows() :
             self.loc[i , name]  = fun( se.loc[ row.upCrossTime : row.upCrossTime + row.Period  ].values )
-        return 
+        return
 
 
 
@@ -185,7 +187,7 @@ def getPeaksBounds(se, threshold):
     up_ = getUpCrossID( array, threshold )
     down_ = getDownCrossID( array, threshold )
 
-    if len(up_) == 0 : 
+    if len(up_) == 0 :
         return np.array([], dtype = int) , np.array([], dtype = int)
 
     if down_[0] < up_[0] :
@@ -197,20 +199,20 @@ def getPeaksBounds(se, threshold):
     return up_, down_
 
 
-def peaksMax( se, threshold ) : 
+def peaksMax( se, threshold ) :
 
      up_, down_ = getPeaksBounds( se, threshold )
-     
-     maxIndex = np.empty( up_.shape , dtype = int )  
 
-     for i in range(len( up_ )) : 
+     maxIndex = np.empty( up_.shape , dtype = int )
+
+     for i in range(len( up_ )) :
          maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i]+1 ].argmax()
-     
-     return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] , 
+
+     return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] ,
                                    "MaximumTime" : se.index[ maxIndex ] ,
-                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ], 
+                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ],
                                    "Period" : se.index[ down_ ] - se.index[ up_ ]} )
-     
+
 
 
 """
@@ -269,7 +271,7 @@ def getUpCrossDist(upCrossDf) :
     """
        Get Up-crossing distribution from upCrossMinMax result
     """
-    
+
     N = upCrossDf.shape[0]
     p_ex = np.arange(1./N,1.+1./N,1./N)
     df = pd.DataFrame(index=p_ex,columns=['Minimum','Maximum'])
@@ -292,10 +294,10 @@ def plotUpCross( upCrossDf , ax = None, cycleLimits = False ) :
     #     ax.plot( upCrossDf.upCrossTime.iloc[-1] + upCrossDf.Period.iloc[-1] , 0.  , "+" , label = None)
 
     ax.plot( upCrossDf.MaximumTime , upCrossDf.Maximum , "o" , label = "Max", color ="b")
-    
-    if "MinimumTime" in upCrossDf.columns : 
+
+    if "MinimumTime" in upCrossDf.columns :
         ax.plot( upCrossDf.MinimumTime , upCrossDf.Minimum , "o" , label = "Min", color ="r")
-    
+
     ax.legend(loc = 2)
     return ax
 
@@ -316,17 +318,16 @@ def plotUpCrossDist( upCrossDist , ax = None, label=None):
 
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
+

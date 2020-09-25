@@ -67,28 +67,9 @@ def approx_jacobian_n(x, func, epsilon, fx = None, nproc=1, *args):
 
 
 
-def test_fun1( x ):
-    y = np.empty(x.shape)
-    y[:] = x
-    y[:-1] = x[:-1]*2
-    return y.sum()
-
-def test_fun2( x ):
-    y = np.empty(x.shape)
-    y[:] = x
-    y[:-1] = x[:-1]*2
-    return y
 
 
-if __name__ == "__main__" :
 
-    x0 = np.array(np.linspace(1,12,4))
-    for test_fun in [test_fun1] :
-        print (test_fun)
-        print (approx_jacobian( x0, test_fun, 0.001 ))
-        print (approx_jacobian_n( x0, test_fun, 0.001,  nproc = 1 ))
-        print (approx_jacobian_n( x0, test_fun, 0.001,  nproc = 4 ))
-        print (approx_jacobian_n( x0, test_fun, 0.001, test_fun(x0), nproc = 4 ))
 
 
 
