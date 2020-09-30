@@ -9,6 +9,14 @@ mk
 # dont't upload python temparary code
 *.pyc
 
+build/*
+dist/*
+doc/build*
+*checkpoint.ipynb
+droppy.egg-info/*
+*.backup
+
+
 # editor and misc backup files - anywhere
 *~
 .*~
