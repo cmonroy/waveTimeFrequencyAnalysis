@@ -20,7 +20,7 @@ def getAngleColorMappable( unit = "rad", cmap = "twilight" ):
         vmax = 2*np.pi
     else :
         vmax = 360.
-    return getColorMap( vmin = 0.0 , vmax = vmax , cmap = cmap )
+    return getColorMappable( vmin = 0.0 , vmax = vmax , cmap = cmap )
 
 
 def getColorMappable( vmin, vmax, cmap = "viridis" ):
