@@ -18,7 +18,12 @@ class UpCrossAnalysis( pd.DataFrame ):
         if "Maximum" not in self.columns :
             raise(Exception( 'No "Maximum" in columns, UpCrossAnalysis.FromTs might be what you are looking for.'  ))
 
-        self.se = None
+        self.attrs["se"] = None
+
+    @property
+    def se(self) :
+        if "se" in self.attrs.keys():
+            return self.attrs[ "se" ]
 
     @property
     def _constructor(self):
@@ -67,7 +72,7 @@ class UpCrossAnalysis( pd.DataFrame ):
         else :
             raise(Exception(f"method '{method:}' not available"))
 
-        res.se = se
+        res.attrs["se"] = se
         return res
 
 
@@ -201,17 +206,17 @@ def getPeaksBounds(se, threshold):
 
 def peaksMax( se, threshold ) :
 
-     up_, down_ = getPeaksBounds( se, threshold )
+    up_, down_ = getPeaksBounds( se, threshold )
 
-     maxIndex = np.empty( up_.shape , dtype = int )
+    maxIndex = np.empty( up_.shape , dtype = int )
 
-     for i in range(len( up_ )) :
-         maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i]+1 ].argmax()
+    for i in range(len( up_ )) :
+        maxIndex[i] = up_[i] + se.values[ up_[i] : down_[i]+1 ].argmax()
 
-     return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] ,
-                                   "MaximumTime" : se.index[ maxIndex ] ,
-                                   "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ],
-                                   "Period" : se.index[ down_ ] - se.index[ up_ ]} )
+    return pd.DataFrame( data = { "Maximum" : se.iloc[ maxIndex  ] ,
+                                  "MaximumTime" : se.index[ maxIndex ] ,
+                                  "upCrossTime" : se.index[ up_ ] , "downCrossTime":  se.index[ down_ ],
+                                  "Period" : se.index[ down_ ] - se.index[ up_ ]} )
 
 
 
