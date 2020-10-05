@@ -5,16 +5,41 @@ from matplotlib.cm import ScalarMappable
 import matplotlib
 
 def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0, zoom = "full" , markersize = 5, **kwargs):
+    """Draw route on earth map
+
+
+    Parameters
+    ----------
+    pathPoint : List, array of pd.DataFrame
+        Path point to plotted.
+        If dataFrame, should have "lat" and "lon" columns
+
+    var : str, optional
+        Columns to use to color path point. The default is None.
+    label : TYPE, optional
+        DESCRIPTION. The default is None.
+    ax : matplotlib "axe", optional
+        Where to plot. The default is None.
+    central_longitude : float, optional
+        central_longitude. The default is 0.0.
+    zoom : str, optional
+        DESCRIPTION. The default is "full".
+    markersize : float, optional
+        Marker size. The default is 5.
+    **kwargs : Any
+        Keyword arguments passed to .plot().
+
+    Returns
+    -------
+    ax :
+        The "axe"
 
     """
-    Same as drawRoute, but based on cartopy
 
-    pathPoint can be :
-        - a list if (lat, lon) tuple
-        - a DataFrame with "lon" and "lat" columns
-        - a array
 
-    """
+
+
+
     from cartopy import crs as ccrs, feature
     from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
     projection = ccrs.PlateCarree(central_longitude=central_longitude)
