@@ -2,10 +2,11 @@ Pygments>=2.6.1
 nbsphinx
 ipython
 xarray
-numpy
+numpy>=1.15
 scipy>=1.4
 pandas>=1.0
 matplotlib>=3.0
 seaborn
 h5py
+pyproj
 cartopy
