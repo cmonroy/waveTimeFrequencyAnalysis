@@ -9,3 +9,4 @@ from .meshPlot import plotMesh
 from .statPlots import qqplot, qqplot2, distPlot, probN, probN_ci
 from .addcopyfighandler import copyToClipboard_on
 from .concatPlot import readImage, concatPlot
+from .geoMap import mapPlot, drawRoute

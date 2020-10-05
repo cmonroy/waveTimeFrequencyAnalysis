@@ -6,4 +6,5 @@ Tutorials
    ./Upcrossing
    ./scatter_plot
    ./Decluster
+   ./geoMap
 
