@@ -124,7 +124,7 @@ def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, int
     if x_y :
         add_x_y( x, y,  ax )
 
-    ax.scatter( x, y, c=z, edgecolor = "", **kwargs )
+    ax.scatter( x, y, c=z, edgecolor = None, **kwargs )
     
     #Add color baz : 
     if cbar :
