@@ -4,6 +4,28 @@ from matplotlib import pyplot as plt
 from matplotlib.cm import ScalarMappable
 import matplotlib
 
+def standardLon(longitude):
+    """Transform longitude (in degree) to standard range [-180.,180.]
+
+    Parameters
+    ----------
+    longitude : float or array-like
+        Longitude.
+
+    Returns
+    -------
+    longitude : float or array-like
+        Trnasformed longitude.
+
+    """
+    if hasattr(longitude,'__len__'):
+        longitude = [l%360. for l in longitude]
+        longitude = [l - 360. if l>180. else l for l in longitude]
+    else:
+        longitude = longitude%360.
+        if longitude>180.0: longitude -= 360.
+    return longitude
+    
 def drawMap(ax=None, projection=None, central_longitude=0.0, lcolor='grey', scolor=None):
     from cartopy import crs as ccrs, feature
     from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -65,11 +87,14 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         ax = drawMap(projection=projection, central_longitude=central_longitude, lcolor=lcolor, scolor=scolor)
 
     if type(pathPoint) == list:  # List of [long, lat] tuple
+        pathPoint = [(standardLon(l[0]-central_longitude), l[1]) for l in pathPoint]
         for iPoint in range(len(pathPoint)):
             lat, long = pathPoint[iPoint]
             ax.plot(long , lat,  "bo", markersize = markersize, **kwargs)
 
     elif type(pathPoint) == pd.DataFrame:
+        pathPoint = pathPoint.copy()
+        pathPoint.loc[:,'lon'] = standardLon(pathPoint.loc[:,'lon']-central_longitude)
         if var is not None:
             # Draw route colored by field value
             cmap = matplotlib.cm.get_cmap('viridis')
@@ -99,7 +124,7 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         
     return ax
 
-def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full" , markersize = 15, mcolor='b', lcolor='grey', scolor=None, every=1):
+def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full" , markersize = 15, mcolor='b', lcolor='grey', scolor=None, every=1, verbose=0):
     """Animate route on earth map
 
 
@@ -107,7 +132,7 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
     ----------
     pathPoint : pd.DataFrame
         Path point to plotted.
-        Mandatory columns : "lat" and "lon".
+        Mandatory columns : "lat", "lon" and "Dir".
         Optional columns : "time" and var.
     var : str, optional
         Columns to use to color path point. The default is None.
@@ -127,6 +152,8 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
         Color of sea/ocean areas. The default is None.
     every : int, optional
         Integer defining animation output rate. The default is 1.
+    verbose : int, optional
+        Print progressbar is >0. The default is 0.
 
     Returns
     -------
@@ -156,11 +183,16 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
         # line = m.plot(0, 0, color='b', ls=':', lw=5)[0]
         line = ax.scatter(0, 0, color=mcolor, marker='.', s=5)
         
+    if verbose>0:
+        from tqdm import tqdm
+        pbar = tqdm(np.arange(int(pathPoint.shape[0]/every)))
+        
     def init():
         point.set_data([], [])
         return point, line
         
     def animate(i):
+        if verbose>0: pbar.update()
         j = i*every
         lat = pathPoint.loc[j,'lat']
         lon = pathPoint.loc[j,'lon']
@@ -215,5 +247,66 @@ def mapPlot(  dfMap , ax=None, isoLevel = None , central_longitude=0.0  , vmin=N
         cbar = plt.colorbar( ScalarMappable(norm=cf.norm, cmap=cf.cmap), extend = extend)
         if isinstance(color_bar , str) :
             cbar.set_label( color_bar )
+
+    return ax
+
+def drawGws( zoneList, ax=None, src='GWS', central_longitude=0.0, textLabel=True, color=None, **kwargs ):
+    """
+    Draw Global Wave Statistics areas on map
+
+    Parameters
+    ----------
+    zoneList : str or list of str
+        List of area names to plot. If "all", all areas are plot.
+    ax : axis, optional
+        axis. The default is None.
+    src : str, optional
+        Name of tab in Excel zones definition file. The default is 'GWS'.
+    central_longitude : TYPE, optional
+        Central longitude. The default is 0.0.
+    textLabel : bool, optional
+        Option to plot area names. The default is True.
+    color : str, optional
+        Color of area contours. The default is None.
+
+    """
+    
+    from cartopy import crs as ccrs
+    from Pluto.ScatterDiagram.coefsTable import gwsZone, gwsCentralPoints
+    
+    proj =  ccrs.PlateCarree(central_longitude=central_longitude)
+    
+    if ax is None:
+        from droppy.pyplotTools import drawMap
+        ax = drawMap(projection=proj, central_longitude=central_longitude)
+
+    if type(zoneList)==str:
+        if zoneList.lower()=='all': zoneList = list(gwsZone[src].keys())
+
+    for zone in zoneList :
+        #Deal with 180° line
+        if (np.amax(gwsZone[src][zone],axis=0)[1] - np.amin(gwsZone[src][zone],axis=0)[1])>180:
+            #right side
+            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1]==np.amax(gwsZone[src][zone],axis=0)[1]])
+            tab = np.vstack([tab,tab[::-1],tab[0]])
+            tab[2:4,1] = 180.
+            ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
+            
+            #left side
+            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1]==np.amin(gwsZone[src][zone],axis=0)[1]])
+            tab = np.vstack([tab,tab[::-1],tab[0]])
+            tab[2:4,1] = -180.
+            ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
+
+        else:
+            tab = np.array( gwsZone[src][zone] + [gwsZone[src][zone][0]] )
+            ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
+            
+        if textLabel :
+            if zone in  gwsCentralPoints.keys() :
+                lat , lon = gwsCentralPoints[zone]
+            else :
+                lat, lon = tab[ :, 0 ].mean() ,tab[ :, 1 ].mean()
+            ax.text( lon , lat , zone, horizontalalignment='right',  transform=proj, c=color)
 
     return ax
