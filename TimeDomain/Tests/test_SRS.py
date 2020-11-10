@@ -20,8 +20,8 @@ if __name__ == "__main__" :
     ax.legend()
     ax.set_xscale("log")
 
-    fig, ax = plt.subplots()
-    res.NEG.plot(ax=ax, label = "libs")
-    res_check.POS.plot(ax=ax, label = "manual")
-    ax.legend()
-    ax.set_xscale("log")
+    # fig, ax = plt.subplots()
+    # res.NEG.plot(ax=ax, label = "libs")
+    # res_check.POS.plot(ax=ax, label = "manual")
+    # ax.legend()
+    # ax.set_xscale("log")

@@ -3,9 +3,7 @@ import numpy as np
 from scipy.stats import rayleigh
 from matplotlib import pyplot as plt
 from droppy.pyplotTools.statPlots import distPlot
-
-
-
+from droppy import logger
 
 class UpCrossAnalysis( pd.DataFrame ):
     """Object-oriented interface to upcrossing analysis.
@@ -16,7 +14,8 @@ class UpCrossAnalysis( pd.DataFrame ):
         pd.DataFrame.__init__(self, *args, **kwargs)
 
         if "Maximum" not in self.columns :
-            raise(Exception( 'No "Maximum" in columns, UpCrossAnalysis.FromTs might be what you are looking for.'  ))
+            logger.info("Re-indexed UpCrossAnalysis does not have 'Maximum' as column, return standard dataframe")
+            self.__class__ = pd.DataFrame
 
         self.attrs["se"] = None
 
@@ -132,16 +131,16 @@ class UpCrossAnalysis( pd.DataFrame ):
 
 
     def mapInCycle( self , se,  name = "target", fun = np.max ):
-        """Map maxima from other time series on current cycles
+        """Map maxima from other time series on current cycles, add a columns to the input dataframe
 
         Parameters
         ----------
         se : pd.Series
             Series to map.
         name : str, optional
-            DESCRIPTION. The default is "target".
+            Name of the columns to be added. The default is "target".
         fun : function, optional
-            DESCRIPTION. The default is np.max.
+            Function to apply to the input series. The default is np.max.
 
         Returns
         -------
