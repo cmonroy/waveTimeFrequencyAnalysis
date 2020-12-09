@@ -7,27 +7,32 @@ from droppy import logger
 
 class Decluster( object ) :
 
-    def __init__(self, se , threshold, method = "upcross", minSpacing = None ):
+    def __init__(self, se , threshold, method, minSpacing, jitted = False ):
         """
         Parameters
         ----------
-        se : pd.Seris
+        se : pd.Series
             Time series to decluster. Index is time.
         threshold : float
             Threshold
         method : str, optional
-            Way to decluster. The default is "upcross".
+            Way to decluster. Among [ "updown, "upcross" ].
         minSpacing : str, se.index.dtype.type
             Minimum spacing between maxima. The default is None.
-
+        jitted : bool
+            Use Numba and Just-In-Time compilation (beneficial for very large case)
 
         """
 
-        self.se = se.astype("float64")
+        logger.debug(f"Declustering with threshold = {threshold:}")
+        self.se = se
         self.threshold = threshold
         self.method = method
         self.minSpacing = minSpacing
+        self.jitted = jitted
         self._declustered = None
+
+        self._do_declustering()
 
 
 
@@ -44,14 +49,28 @@ class Decluster( object ) :
             Way to decluster. The default is "upcross".
         minSpacing : str, se.index.dtype.type
             Minimum spacing between maxima. The default is None.
+        threshold_min : float, optional
+            lower bound for solve algorithm, default to se.mean()
+        threshold_max : float, optional
+            Upper bound for solve algorithm, default to se.mean()
+        large_fast : bool, or tuple, optional
+            For large time-series, first find boundaries without applying the minspacing criteria (slow for low treshold), default to False
+        xtol : int
+            xtol tolerance passed to brenth algorythm
+        rtol : float
+            Relative tolerance
 
         """
         N =  (se.index[-1] - se.index[0] ) / RP
+        logger.debug(f"Declustering : Find threshold for RP={str(RP):} , corresponding to {N:} exceedance")
         return cls.From_Threshold_N( se, N, **kwargs)
 
 
+
+
     @classmethod
-    def From_Threshold_N( cls, se, N, **kwargs ):
+    def From_Threshold_N( cls, se, N, *, threshold_min = None , threshold_max = None , large_fast = False,
+                          rtol = 0.0001, xtol = 1e-3, **kwargs ):
         """
 
         Parameters
@@ -64,17 +83,43 @@ class Decluster( object ) :
             Way to decluster. The default is "upcross".
         minSpacing : str, se.index.dtype.type
             Minimum spacing between maxima. The default is None.
-
+        threshold_min : float, optional
+            lower bound for solve algorithm, default to se.mean()
+        threshold_max : float, optional
+            Upper bound for solve algorithm, default to se.mean()
+        large_fast : bool, or tuple, optional
+            For large time-series, first find boundaries without applying the minspacing criteria (slow for low treshold), default to False
+        xtol : int
+            Absolute tolerance
+        rtol : float
+            Relative tolerance
         """
 
-        def target( x ) :
-            peaks = Decluster( se, x, **kwargs )
+        if threshold_min is None:
+            threshold_min = se.mean()
+        if threshold_max is None:
+            threshold_max = se.max()
+
+        minSpacing = kwargs.pop("minSpacing")
+
+        def target( x , minSpac ) :
+            peaks = Decluster( se, x, minSpacing = minSpac, **kwargs )
             res = len(peaks.declustered) - N
+            logger.debug(f"Declustering solve Threshold = {x} , N = {res+N:}  ")
             return res
 
-        threshold = brentq( target, se.mean() , se.max()  , xtol = 0.001  )
+        if large_fast :
+            if isinstance( large_fast , bool ) :
+                large_fast = (0.7 , 1.0)
+            logger.debug(f"Starting threshold solve, between {threshold_min:} and {threshold_max:}, without minSpacing")
+            threshold_ = brentq( target, args = ( None ), a = threshold_min , b = threshold_max , xtol = xtol, rtol = rtol  )
+            threshold_min = threshold_ * large_fast[0]
+            threshold_max = threshold_ * large_fast[1]
 
-        return cls( se=se , threshold = threshold , **kwargs)
+        logger.debug(f"Starting threshold solve, between {threshold_min:} and {threshold_max:}")
+        threshold = brentq( target, args = ( minSpacing ), a = threshold_min , b = threshold_max , xtol = xtol, rtol = rtol  )
+        return cls( se=se , threshold = threshold , minSpacing = minSpacing, **kwargs)
+
 
     @property
     def exceedance(self):
@@ -136,7 +181,7 @@ class Decluster( object ) :
             raise(Exception( "Decluster type not handled" ))
 
         if self.minSpacing is not None :
-            self._declustered = minSpacingFilter(self._declustered , spacing = self.minSpacing)
+            self._declustered = minSpacingFilter(self._declustered , spacing = self.minSpacing, jitted = self.jitted)
 
 
     def plot(self, ax=None) :
@@ -177,9 +222,10 @@ class Decluster( object ) :
         return np.insert(  np.diff( self.exceedance.index ) , 0 , self.exceedance.index[0] - self.se.index[0] )
 
 
-def minSpacingFilter(se , spacing) :
+def minSpacingFilter(se , spacing, jitted = False) :
     """ Remove maxima with small spacing
 
+    Note : room for optimization.
 
     Parameters
     ----------
@@ -187,28 +233,69 @@ def minSpacingFilter(se , spacing) :
         Maxima
     spacing : se.index.dtype
         Minimum interval
+    jitted : bool
+        Use Numba and Just-In-Time compilation (beneficial for very large case)
 
     Returns
     -------
     pd.Series
         Maxima with at least "spacing" spacing.
-
     """
-    diff = se.index[ 1:] - se.index[ :-1 ]
+
+    logger.debug(f"Min spacing filter, {str(spacing):}")
+
+    t = se.index.values
+    v = se.values
+
+    if jitted :
+        import numba as nb
+        minSpacingFilter_array_jitted = nb.jit( nb.types.Tuple( (nb.typeof(t) ,nb.typeof(v)) )
+                                               (nb.typeof(t), nb.typeof(v), nb.float64),
+                                               nopython = True )(minSpacingFilter_array)
+        t_new , v_new = minSpacingFilter_array_jitted( time = t , value = v , spacing = spacing )
+    else :
+        t_new , v_new = minSpacingFilter_array( time = se.index.values , value = se.values , spacing = spacing )
+    return pd.Series( index = t_new , data = v_new )
+
+
+def minSpacingFilter_array( time , value , spacing) :
+    """ Remove maxima with small spacing
+
+    Note : room for optimization.
+
+    Parameters
+    ----------
+    time : array-like
+        Time
+    time : array-like
+        Values
+    spacing : se.index.dtype
+        Minimum interval
+
+    Returns
+    -------
+    (time[:] , value[:])
+        Declustered time series
+    """
+
+    diff = time[1:] - time[:-1]
+
     duplicates = np.where(diff < spacing)[0]
     toRemoveList = []
 
     for dup in duplicates :
-        toRemove = dup + np.argmax( [ se.iloc[ dup + 1 ] , se.iloc[ dup ]] )
+        toRemove = dup + np.argmax( np.array([ value[ dup + 1 ] , value[ dup ]]) )
         if toRemove not in toRemoveList and toRemove + 1 not in toRemoveList and toRemove - 1 not in toRemoveList :
             toRemoveList.append( toRemove )
 
-    se_dec = se.drop( se.index[ toRemoveList ] )
+    time_dec = np.delete( time , toRemoveList )
+    value_dec = np.delete( value , toRemoveList )
 
     if len(toRemoveList) > 0 :
-        return minSpacingFilter(se_dec , spacing)
+        return minSpacingFilter_array(time_dec , value_dec ,  spacing)
 
-    return se_dec
+    return time_dec , value_dec
+
 
 
 
@@ -220,7 +307,9 @@ if __name__ == "__main__" :
 
     time = np.arange(0, 100, 0.5)
     se = pd.Series( index = time , data = np.cos(time) )
-    dec = Decluster( se, threshold = 0.2, minSpacing = 0.2, method = "updown")
+    dec = Decluster( se, threshold = 0.2, minSpacing = 10, method = "updown")
     # test = peaksMax( se, 0.5)
     dec.plot()
+
+
 
