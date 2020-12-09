@@ -25,14 +25,14 @@ def standardLon(longitude):
         longitude = longitude%360.
         if longitude>180.0: longitude -= 360.
     return longitude
-    
+
 def drawMap(ax=None, projection=None, central_longitude=0.0, lcolor='grey', scolor=None):
     from cartopy import crs as ccrs, feature
     from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
-    
+
     if projection is None: projection = ccrs.PlateCarree(central_longitude=central_longitude)
     if ax is None: fig, ax = plt.subplots( figsize = [12,6],  subplot_kw={'projection':projection })
-    
+
     ax.coastlines()
     ax.add_feature(feature.LAND, facecolor=lcolor)
     if scolor is not None: ax.add_feature(feature.OCEAN, facecolor=scolor)
@@ -40,7 +40,7 @@ def drawMap(ax=None, projection=None, central_longitude=0.0, lcolor='grey', scol
     ax.set_yticks([-90, -60, -30, 0, 30, 60, 90], crs=ccrs.PlateCarree())
     ax.xaxis.set_major_formatter(LongitudeFormatter(zero_direction_label=True))
     ax.yaxis.set_major_formatter(LatitudeFormatter())
-    
+
     return ax
 
 def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0, zoom = "full" , markersize = 5, lcolor='grey', scolor=None, cbar = False, **kwargs):
@@ -100,13 +100,13 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
             cmap = matplotlib.cm.get_cmap('viridis')
             norm = matplotlib.colors.Normalize(vmin=np.min(pathPoint.loc[:,var]), vmax=np.max(pathPoint.loc[:,var]))
             ax.scatter(pathPoint["lon"], pathPoint["lat"],  s = markersize , c = cmap(norm(pathPoint.loc[:, var].values)), **kwargs)
-            
+
             if cbar:
                 from mpl_toolkits.axes_grid1 import make_axes_locatable
                 sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
                 cbar = ax.get_figure().colorbar(sm, ax=ax, orientation='vertical',fraction=0.046, pad=0.04)
                 cbar.set_label(var, rotation=90)
-            
+
         else:
             ax.plot(pathPoint["lon"], pathPoint["lat"], "bo", markersize = markersize, **kwargs)
 
@@ -121,7 +121,7 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         ax.set_global()
         ax.set_xlim((-180., 180.))
         ax.set_ylim((-90.,  90.))
-        
+
     return ax
 
 def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full" , markersize = 15, mcolor='b', lcolor='grey', scolor=None, every=1, verbose=0):
@@ -163,10 +163,10 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
 
     """
     import matplotlib.animation as animation
-    
+
     Writer = animation.writers['ffmpeg']
     writer = Writer(fps=20, metadata=dict(artist='Me'), bitrate=1800)
-        
+
     ax = drawMap(central_longitude=central_longitude,lcolor=lcolor, scolor=scolor)
     if zoom.lower() == "full" :
         ax.set_global()
@@ -182,15 +182,15 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
     else:
         # line = m.plot(0, 0, color='b', ls=':', lw=5)[0]
         line = ax.scatter(0, 0, color=mcolor, marker='.', s=5)
-        
+
     if verbose>0:
         from tqdm import tqdm
         pbar = tqdm(np.arange(int(pathPoint.shape[0]/every)))
-        
+
     def init():
         point.set_data([], [])
         return point, line
-        
+
     def animate(i):
         if verbose>0: pbar.update()
         j = i*every
@@ -199,7 +199,7 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
         angle = 360.-pathPoint.loc[j,'Dir']
         point.set_data(lon, lat)
         point.set_marker((3, 0, angle))
-        
+
         lat_s = pathPoint.loc[:j,'lat'][::every*2]
         lon_s = pathPoint.loc[:j,'lon'][::every*2]
         if var is not None:
@@ -209,14 +209,14 @@ def animRoute(pathPoint, var=None, ax=None, central_longitude=0.0, zoom = "full"
         else:
             # line.set_data(lon_s,lat_s)
             line.set_offsets(np.array([lon_s,lat_s]).T)
-        
+
         if "time" in pathPoint.columns: plt.title(pathPoint.time[j])
         else: plt.title(pathPoint.index[j])
-        
+
         return point, line
-            
+
     anim = animation.FuncAnimation(ax.get_figure(), animate, frames=int(pathPoint.shape[0]/every), init_func=init, repeat=True, blit=True)
-        
+
     return anim, writer
 
 def mapPlot(  dfMap , ax=None, isoLevel = None , central_longitude=0.0  , vmin=None , vmax=None, cmap = "cividis", color_bar = False) :
@@ -227,12 +227,12 @@ def mapPlot(  dfMap , ax=None, isoLevel = None , central_longitude=0.0  , vmin=N
     dfMap.columns => latitude
     dfMap.data => scalar to plot
     """
-    
+
     from cartopy import crs as ccrs, feature
     projection = ccrs.PlateCarree(central_longitude=central_longitude)
     if ax is None:
-        ax = drawMap(projection=projection, central_longitude=central_longitude, lcolor=lcolor, scolor=scolor)
-    
+        ax = drawMap(projection=projection, central_longitude=central_longitude)
+
     if vmin is None : vmin = np.min( dfMap.values[  (~np.isnan(dfMap.values)) ] )
     if vmax is None : vmax = np.max( dfMap.values[  (~np.isnan(dfMap.values)) ] )
 
@@ -270,30 +270,34 @@ def drawGws( zoneList, ax=None, src='GWS', central_longitude=0.0, textLabel=True
         Color of area contours. The default is None.
 
     """
-    
+
     from cartopy import crs as ccrs
     from Pluto.ScatterDiagram.coefsTable import gwsZone, gwsCentralPoints
-    
+
     proj =  ccrs.PlateCarree(central_longitude=central_longitude)
-    
+
     if ax is None:
         from droppy.pyplotTools import drawMap
         ax = drawMap(projection=proj, central_longitude=central_longitude)
 
-    if type(zoneList)==str:
-        if zoneList.lower()=='all': zoneList = list(gwsZone[src].keys())
+    if type(zoneList) == str:
+        if zoneList.lower() == 'all':
+            zoneList = list(gwsZone[src].keys())
+        else:
+            zoneList = list( zoneList )
+
 
     for zone in zoneList :
         #Deal with 180° line
         if (np.amax(gwsZone[src][zone],axis=0)[1] - np.amin(gwsZone[src][zone],axis=0)[1])>180:
             #right side
-            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1]==np.amax(gwsZone[src][zone],axis=0)[1]])
+            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1] == np.amax(gwsZone[src][zone],axis=0)[1]])
             tab = np.vstack([tab,tab[::-1],tab[0]])
             tab[2:4,1] = 180.
             ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
-            
+
             #left side
-            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1]==np.amin(gwsZone[src][zone],axis=0)[1]])
+            tab = np.array([tup for tup in gwsZone[src][zone] if tup[1] == np.amin(gwsZone[src][zone],axis=0)[1]])
             tab = np.vstack([tab,tab[::-1],tab[0]])
             tab[2:4,1] = -180.
             ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
@@ -301,12 +305,11 @@ def drawGws( zoneList, ax=None, src='GWS', central_longitude=0.0, textLabel=True
         else:
             tab = np.array( gwsZone[src][zone] + [gwsZone[src][zone][0]] )
             ax.plot( *np.transpose(tab)[::-1] , c=color, **kwargs )
-            
+
         if textLabel :
-            if zone in  gwsCentralPoints.keys() :
-                lat , lon = gwsCentralPoints[zone]
+            if zone in gwsCentralPoints[src].keys() :
+                lat , lon = gwsCentralPoints[src][zone]
             else :
                 lat, lon = tab[ :, 0 ].mean() ,tab[ :, 1 ].mean()
             ax.text( lon , lat , zone, horizontalalignment='right',  transform=proj, c=color)
-
     return ax
