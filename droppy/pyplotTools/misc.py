@@ -1,7 +1,17 @@
 import itertools
 import numpy as np
-colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
-def newColorIterator() :
+
+def newColorIterator(ccycle=None,cmap=None,n=10):
+    if ccycle is not None:
+        if ccycle.hasattr(__len__): colorCycle = ccycle
+        else: print('Not Implemented')
+        
+    elif cmap is not None:
+        import matplotlib.cm as cm
+        colorMap = cm.get_cmap(cmap)
+        colorCycle = (colorMap(i) for i in np.linspace(0,1,n))
+    else:
+        colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
     return itertools.cycle(colorCycle)
 
 
@@ -84,19 +94,3 @@ def autoscale_xy(ax,axis='y',margin=0.1):
 
     if   axis=='x': ax.set_xlim(cmin,cmax)
     elif axis=='y': ax.set_ylim(cmin,cmax)
-    
-    
-def rgb_to_hexa( r, g, b ) :
-    return f"#{r:02x}{g:02x}{b:02x}"
-
-def hexa_to_rgb( hexcode ) :
-    return tuple(map(ord,hexcode[1:].decode('hex')))
-
-def negativeColor( r,g,b ):
-    if max( np.array([r,g,b]) > 1. ) : 
-       return 255-r , 255-g, 255-b
-    else :
-       return 1. - r , 1.-g, 1.-b
-
-
-

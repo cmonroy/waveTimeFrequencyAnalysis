@@ -11,6 +11,9 @@ import numpy as np
 
 
 def readImage(path):
+    #Import here to avoid mandatory dependence to PIL droppy
+    from PIL import Image, ImageDraw, ImageFont
+    
     return Image.open(path)
 
 def concatPlot(ims,nline=1,ncol=1,offset=[0,0],title=None,fontsize=30):
@@ -49,19 +52,24 @@ def concatPlot(ims,nline=1,ncol=1,offset=[0,0],title=None,fontsize=30):
     
     #Compute new image dimensions
     split_idx = np.append(np.arange(len(ims)),np.repeat(np.nan,nline*ncol-len(ims))).reshape(nline,ncol)
-    h = 0; w = 0
+    wtab= np.zeros_like(split_idx,dtype=int)
+    htab= np.zeros_like(split_idx,dtype=int)
+    
     for i in range(nline):
         w_tmp = 0
         for j in range(ncol):
             if np.isnan(split_idx[i,j]): continue
-            else: w_tmp += ims[int(split_idx[i,j])].width + int(offset[0])
-        w = max(w,w_tmp)
+            elif ims[int(split_idx[i,j])] is None: continue
+            else: wtab[i,j] = int(ims[int(split_idx[i,j])].width)
+    w = wtab.max(axis=0).sum() + int(offset[0])*(wtab.shape[1]-1)
+            
     for j in range(ncol):
         h_tmp = 0
         for i in range(nline):
             if np.isnan(split_idx[i,j]): continue
-            else: h_tmp += ims[int(split_idx[i,j])].height + int(offset[1])
-        h = max(h,h_tmp)
+            elif ims[int(split_idx[i,j])] is None: continue
+            else: htab[i,j] = int(ims[int(split_idx[i,j])].height)
+    h = htab.max(axis=1).sum() + int(offset[1])*(htab.shape[0]-1)
     
     if title is not None:
         font = ImageFont.truetype(join(os.getenv('WINDIR'),'Fonts','Arial.ttf'), fontsize)
@@ -77,11 +85,10 @@ def concatPlot(ims,nline=1,ncol=1,offset=[0,0],title=None,fontsize=30):
     for i in range(nline):
         dw = 0; dh_tmp = 0
         for j in range(ncol):
-            if np.isnan(split_idx[i,j]): continue
-            else: dst.paste(ims[int(split_idx[i,j])], (dw, dh))
-            dw += ims[int(split_idx[i,j])].width + int(offset[0])
-            dh_tmp = max(dh_tmp, ims[int(split_idx[i,j])].height)
-        dh += dh_tmp + int(offset[1])
+            if (wtab[i,j]>0) and (htab[i,j]>0):
+                dst.paste(ims[int(split_idx[i,j])], (dw, dh))
+            dw += wtab.max(axis=0)[j] + int(offset[0])
+        dh += htab.max(axis=1)[i] + int(offset[1])
     
     #Add title
     if title is not None:
