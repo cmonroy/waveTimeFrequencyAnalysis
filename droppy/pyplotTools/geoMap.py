@@ -20,7 +20,7 @@ def standardLon(longitude):
     """
     if hasattr(longitude,'__len__'):
         longitude = [l%360. for l in longitude]
-        longitude = [l - 360. if l>180. else l for l in longitude]
+        longitude = np.array([l - 360. if l>180. else l for l in longitude])
     else:
         longitude = longitude%360.
         if longitude>180.0: longitude -= 360.
