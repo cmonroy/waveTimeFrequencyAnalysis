@@ -2,28 +2,38 @@ import itertools
 import numpy as np
 
 colorCycle = ('b', 'r', 'c' , 'm', 'y' , 'k', 'g')
-def newColorIterator(ccycle=None,cmap=None,n=10):
+def newColorIterator(ccycle=None,cmap=None,n=10,bounds=[0,1]):
     if ccycle is not None:
-        if ccycle.hasattr(__len__): clrCycle = ccycle
+        if hasattr(ccycle,'__len__'): clrCycle = ccycle
         else: print('Not Implemented')
         
     elif cmap is not None:
         import matplotlib.cm as cm
         colorMap = cm.get_cmap(cmap)
-        clrCycle = (colorMap(i) for i in np.linspace(0,1,n))
+        clrCycle = (colorMap(i) for i in np.linspace(bounds[0],bounds[1],n))
     else:
         clrCycle = colorCycle
     return itertools.cycle(clrCycle)
 
 
 markerCycle = ('o', 'v', "s", '*' , 'D')
-def newMarkerIterator() :
-    return itertools.cycle(markerCycle)
+def newMarkerIterator(mcycle=None):
+    if mcycle is not None:
+        if hasattr(mcycle,'__len__'): mkrCycle = mcycle
+        else: print('Not Implemented')
+    else:
+        mkrCycle = markerCycle
+    return itertools.cycle(mkrCycle)
 
 
 linestyleCycle = ('-', '--', '-.', ':')
-def newLinestyleIterator() :
-    return itertools.cycle(linestyleCycle)
+def newLinestyleIterator(lcycle=None):
+    if lcycle is not None:
+        if hasattr(lcycle,'__len__'): lstCycle = lcycle
+        else: print('Not Implemented')
+    else:
+        lstCycle = linestyleCycle
+    return itertools.cycle(lstCycle)
 
 
 def getAngleColorMappable( unit = "rad", cmap = "twilight" ):
