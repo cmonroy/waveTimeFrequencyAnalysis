@@ -5,7 +5,7 @@ from scipy.stats import beta
 def probN( n, alphap = 0.0, betap = 0.0):
     """Return exceedance probability of the ranked data
 
-    (inverse of scipy.stats.mquantiles)
+    (inverse of scipy.stats.mstats.mquantiles)
 
 
     Parameters
