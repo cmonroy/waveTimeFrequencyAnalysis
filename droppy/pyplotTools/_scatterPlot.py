@@ -140,23 +140,37 @@ def density_scatter( x , y, ax = None, sort = True, bins = 20, scale = None, int
     return ax
 
 
-def add_x_y( x,y, ax ) :
+def add_x_y( x,y, ax, **kwargs ) :
     minMax = [min(x.min(),y.min()),max(x.max(),y.max())]
-    ax.plot(minMax , minMax , "-" )
+    ax.plot(minMax , minMax , **kwargs)
 
 
-def add_linregress( x, y, ax, text = True ):
+def add_linregress( x, y, ax, text = True, engine = "scipy", intercept = True ):
     
     minMax = np.array( [ min(x), max(x) ] )
-    lreg = linregress(x, y)
     
-    label = f"y = {lreg.slope:.1f} x {lreg.intercept:+.1f}"
-    ax.plot( minMax , lreg.slope * minMax  + lreg.intercept, "-", label = label )
-    ax.legend()
     
-    return ax
-  
+    if engine == "scipy":
+        lreg = linregress(x, y)
+        label = f"y = {lreg.slope:.2f} x {lreg.intercept:+.2f} ; R2 = {lreg.rvalue**2:.2f} "
+        ax.plot( minMax , lreg.slope * minMax  + lreg.intercept, "-", label = label )
+        ax.legend()
+    elif engine == "statsmodels":
+        import statsmodels.api as sm
+        if intercept:
+            xData = sm.add_constant(x)  # Adds a constant term to the predicton
+            smLM = sm.OLS(y,xData).fit() # linear regression model fit    
+            label = f"y = {smLM.params[1]:.2f} x {smLM.params[0]:+.2f} ; R2 = {smLM.rsquared:.2f} "
+            ax.plot( minMax , smLM.params[1] * minMax  + smLM.params[0], "-", label = label )
+        else:
+            smLM = sm.OLS(y,x).fit() # linear regression model fit    
+            label = f"y = {smLM.params[0]:.2f} x ; R2 = {smLM.rsquared:.2f} "
+            ax.plot( minMax , smLM.params[0] * minMax , "-", label = label )
+            
 
+        ax.legend()
+        
+    return ax
 
 def displayMeanCov(x,y, meanCov,ax):
     if meanCov is not None :
