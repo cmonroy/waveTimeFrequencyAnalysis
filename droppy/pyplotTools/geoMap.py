@@ -43,7 +43,10 @@ def drawMap(ax=None, projection=None, central_longitude=0.0, lcolor='grey', scol
 
     return ax
 
-def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0, zoom = "full" , markersize = 5, lcolor='grey', scolor=None, cbar = False, **kwargs):
+def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0,
+              zoom = "full" , markersize = 5, lcolor='grey', scolor=None, cbar = False,
+              cmap = "cividis",
+              **kwargs):
     """Draw route on earth map
 
 
@@ -71,6 +74,8 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         Color of sea/ocean areas. The default is None.
     cbar : bool, optional
         Add colorbar. The default is False.
+    cmap : str, optional
+        Color map (when variable are colored). The default is "cividis".
     **kwargs : Any
         Keyword arguments passed to .plot().
 
@@ -97,13 +102,13 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         pathPoint.loc[:,'lon'] = standardLon(pathPoint.loc[:,'lon']-central_longitude)
         if var is not None:
             # Draw route colored by field value
-            cmap = matplotlib.cm.get_cmap('viridis')
+            cmap_ = matplotlib.cm.get_cmap(cmap)
             norm = matplotlib.colors.Normalize(vmin=np.min(pathPoint.loc[:,var]), vmax=np.max(pathPoint.loc[:,var]))
-            ax.scatter(pathPoint["lon"], pathPoint["lat"],  s = markersize , c = cmap(norm(pathPoint.loc[:, var].values)), **kwargs)
+            ax.scatter(pathPoint["lon"], pathPoint["lat"],  s = markersize , c = cmap_(norm(pathPoint.loc[:, var].values)), **kwargs)
 
             if cbar:
                 from mpl_toolkits.axes_grid1 import make_axes_locatable
-                sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
+                sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap_)
                 cbar = ax.get_figure().colorbar(sm, ax=ax, orientation='vertical',fraction=0.046, pad=0.04)
                 cbar.set_label(var, rotation=90)
 

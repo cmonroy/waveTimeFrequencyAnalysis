@@ -170,7 +170,8 @@ def dfSurface(df, ax=None, nbColors=200, interpolate=True, polar=False, polarCon
     return ax
 
 
-def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=True, clabels=None, **kwargs):
+def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=True,
+                 clabels=None, legend = False, ccolor = None, **kwargs):
     """Iso contour plot from pandas.DataFrame
 
     Parameters
@@ -184,9 +185,18 @@ def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=
 
     ax: matplotlib.axes._subplots.AxesSubplot
         Specify existing axis to plot
-
-    clabels: list
+    polar : bool, optional
+        Plot in polar coordinates. The default is False.
+    polarConvention : str, optional
+        Convention for polar plots. The default is "seakeeping".
+    inline : bool, optional
+        Put level description on the line. The default is True.
+    clabels: list, optional
         Custom contour labels
+    legend : bool, optional
+        Put iso level in legend. The default is False.
+    ccolor : None or list, optional
+        override iso-line colors. The default is None.
 
     """
     if ax is None:
@@ -211,8 +221,17 @@ def dfIsoContour(df, ax=None, polar=False, polarConvention="seakeeping", inline=
         else:
             ax.clabel(cax, inline=1, fontsize=10,  fmt=r"%1.1f")
 
-#    ax.legend()
-    # Add x and y label if contains in the dataFrame
+    #Legend
+    if legend  :
+        for i, l in enumerate(clabels) :
+            cax.collections[i].set_label(l)
+        ax.legend()
+
+    if ccolor is not None :
+        for i, cc in enumerate(ccolor) :
+            cax.collections[i].set_color( cc )
+
+    # Add x and y label if contained in the dataFrame
     if df.columns.name is not None:
         ax.set_xlabel(df.columns.name)
     if df.index.name is not None:
@@ -318,7 +337,7 @@ def dfAnimate(df, movieName=None, nShaddow=0, xRatio=1.0, rate=1, xlim=None, yli
 
     from matplotlib import animation
 
-    if movieName is not None : 
+    if movieName is not None :
         logger.info("Making animation file : " + movieName)
 
     global pause

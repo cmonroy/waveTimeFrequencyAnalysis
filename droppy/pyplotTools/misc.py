@@ -16,7 +16,7 @@ def newColorIterator(ccycle=None,cmap=None,n=10,bounds=[0,1]):
     return itertools.cycle(clrCycle)
 
 
-markerCycle = ('o', 'v', "s", '*' , 'D')
+markerCycle = ('o', 'v', "s", '*' , 'D', "+" , "x")
 def newMarkerIterator(mcycle=None):
     if mcycle is not None:
         if hasattr(mcycle,'__len__'): mkrCycle = mcycle
