@@ -126,6 +126,9 @@ def drawRoute(pathPoint, var=None, label = None,  ax=None, central_longitude=0.0
         ax.set_global()
         ax.set_xlim((-180., 180.))
         ax.set_ylim((-90.,  90.))
+    elif zoom.lower() in ["atlantic"] :
+        ax.set_xlim( [-85, 0] )
+        ax.set_ylim( [-20, 60] )
 
     return ax
 
@@ -255,7 +258,7 @@ def mapPlot(  dfMap , ax=None, isoLevel = None , central_longitude=0.0  , vmin=N
 
     return ax
 
-def drawGws( zoneList, ax=None, src='GWS', central_longitude=0.0, textLabel=True, color=None, **kwargs ):
+def drawGws( zoneList, ax=None, src='GWS', central_longitude=0.0, textLabel=True, color="black", **kwargs ):
     """
     Draw Global Wave Statistics areas on map
 

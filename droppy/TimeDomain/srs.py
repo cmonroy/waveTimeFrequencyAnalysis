@@ -81,7 +81,6 @@ class ShockResponseSpectrum:
         from droppy.TimeDomain.oneDof import OneDof
         from scipy.interpolate import InterpolatedUnivariateSpline
         k = self.input_accel_g.max()
-        res = pd.DataFrame( index = fn_array, columns = ["POS", "NEG"] )
 
         # Calculate SRS using Smallwood ramp invariant method
         self.pos_accel = np.zeros_like(self.fn_array)
@@ -198,7 +197,7 @@ class ShockResponseSpectrum:
         fig.set_size_inches(10,7)
         return ax
 
-    def plot_input_vel(self, filename = None):
+    def plot_input_vel(self, filename = None, ax=None):
         if ax is None :
             fig, ax = plt.subplots()
         ax = self._make_vel_subplot(ax)

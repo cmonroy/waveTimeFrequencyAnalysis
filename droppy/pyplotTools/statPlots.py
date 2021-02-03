@@ -115,6 +115,67 @@ def qqplot2(data_1, data_2, label_1=None, label_2=None, ax=None, x_y = True, mar
 
 
 
+def rpPlot(data, duration, frozenDist=None, ax=None,
+             label=None, labelFit=None, marker="+", noData = False,
+             order = 1, alphap = 0.0, betap = 0.0,**kwargs ) :
+    """
+    Plot parametric distribution together with data, versus return period
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Data points
+    duration : float
+        Data duration
+    frozenDist : scipy.stats.rv_continouse, optional
+        Analytical distribution to be plotted. The default is None.
+    ax : matplotlib axes object, optional
+        Where to plot. The default is None.
+    label : str, optional
+        data label. The default is None.
+    labelFit : str, optional
+        fit label. The default is None.
+    marker : str, optional
+        Data marker. The default is "+".
+    noData : bool, optional
+        Do not plot data. The default is False.
+    alphap : float, optional
+        Value used to calculate the emprical distribution. The default is 0.0.
+    betap : float, optional
+        Value used to calculate the emprical distribution. The default is 0.0.
+    **kwargs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    ax : matplotlib axes object,
+        The plot.
+
+    """
+
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    n = len(data)
+
+    prob = probN(n, alphap = alphap , betap = betap)
+    rp = -duration / (n * np.log( 1 - prob ))
+
+    if not noData:
+        ax.plot( rp , np.sort(data), marker=marker, label=label, linestyle="", **kwargs)
+
+    if frozenDist is not None:
+        ax.plot(rp , frozenDist.isf(prob), "-", label = labelFit, **kwargs)
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Return period" )
+
+    if label is not None or labelFit is not None :
+        ax.legend( loc = 1 )
+
+    return ax
+
+
 def distPlot(data, frozenDist=None, ax=None,
              label=None, labelFit=None, marker="+", noData = False,
              order = 1, alpha_ci = None, period=None,
@@ -128,33 +189,33 @@ def distPlot(data, frozenDist=None, ax=None,
         Data points
     frozenDist : scipy.stats.rv_continouse, optional
         Analytical distribution to be plotted. The default is None.
-    ax : TYPE, optional
-        DESCRIPTION. The default is None.
-    label : TYPE, optional
-        DESCRIPTION. The default is None.
-    labelFit : TYPE, optional
-        DESCRIPTION. The default is None.
-    marker : TYPE, optional
-        DESCRIPTION. The default is "+".
-    noData : TYPE, optional
-        DESCRIPTION. The default is False.
+    ax : matplotlib axes object, optional
+        Where to plot. The default is None.
+    label : str, optional
+        data label. The default is None.
+    labelFit : str, optional
+        fit label. The default is None.
+    marker : str, optional
+        Data marker. The default is "+".
+    noData : bool, optional
+        Do not plot data. The default is False.
     order : TYPE, optional
         DESCRIPTION. The default is 1.
-    alpha_ci : TYPE, optional
-        DESCRIPTION. The default is None.
+    alpha_ci : float, optional
+        Confidence interval size. The default is None.
     period : float, optional
-        DESCRIPTION. The default is None.
-    alphap : TYPE, optional
-        DESCRIPTION. The default is 0.0.
-    betap : TYPE, optional
-        DESCRIPTION. The default is 0.0.
+        Period to plot data in exceedance rate. The default is None.
+    alphap : float, optional
+        Value used to calculate the emprical distribution. The default is 0.0.
+    betap : float, optional
+        Value used to calculate the emprical distribution. The default is 0.0.
     **kwargs : TYPE
         DESCRIPTION.
 
     Returns
     -------
-    ax : TYPE
-        DESCRIPTION.
+    ax : matplotlib axes object,
+        The plot.
 
     """
     from matplotlib import pyplot as plt
@@ -166,7 +227,7 @@ def distPlot(data, frozenDist=None, ax=None,
     prob = probN(n, alphap = alphap , betap = betap)
 
     if period is not None:
-        conv = 3600. / period  #Convert from probability to events rate
+        conv = 3600. / period  # Convert from probability to events rate
     else :
         conv = 1.0
 
@@ -189,3 +250,45 @@ def distPlot(data, frozenDist=None, ax=None,
     ax.grid(True)
 
     return ax
+
+
+def cdf_from_edges_and_count(edges, count) :
+    return edges[1:-1], (np.cumsum(count) / np.sum(count))[:-1]
+
+
+def distPlot_bins(edges, count, frozenDist, label=None, labelFit=None, marker="+", noData = False, ax = None ) :
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    v_ , cdf_ = cdf_from_edges_and_count(edges, count)
+    ax.plot( v_ , 1-cdf_ , "+" )
+
+    prob = np.logspace( -np.log10(np.sum(count))  , np.log10( 1 - 1/np.sum(count)) , 500)
+
+    if frozenDist is not None:
+        ax.plot( frozenDist.isf(prob), prob, "-", label = labelFit)
+
+    ax.set_ylabel( "Exceedance probability" )
+    ax.set_yscale("log")
+    return ax
+
+
+def distPlot_bins_pdf(edges, count, frozenDist, label=None, labelFit=None, marker="+", noData = False,
+                      color_fit = "darkorange", ax = None ) :
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ax.bar( edges[:-1], count / (np.sum(count) / (edges[-1]-edges[0]) ),
+            width = np.diff(edges), align = "edge", alpha = 0.5, color = "blue")
+
+    if frozenDist is not None:
+        c = 0.5*(edges[1:] + edges[:-1])
+        ax.plot( c , frozenDist.pdf(c), "-", label = labelFit, color = color_fit, linewidth = 2)
+
+    ax.set_ylabel( "Probability density" )
+    ax.set_yscale("log")
+    return ax
+
+

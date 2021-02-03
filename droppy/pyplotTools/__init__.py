@@ -6,7 +6,7 @@ from .surfacePlot import mapFunction
 from ._scatterPlot import kde_scatter, density_scatter, scatterPlot, add_linregress,add_x_y, displayMeanCov
 from .mplZoom import ZoomPan
 from .meshPlot import plotMesh
-from .statPlots import qqplot, qqplot2, distPlot, probN, probN_ci
+from .statPlots import qqplot, qqplot2, distPlot, probN, probN_ci, distPlot_bins, distPlot_bins_pdf, rpPlot
 from .addcopyfighandler import copyToClipboard_on
 from .concatPlot import readImage, concatPlot
 from .geoMap import mapPlot, drawRoute, animRoute, drawMap, standardLon, drawGws
